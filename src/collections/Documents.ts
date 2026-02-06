@@ -4,7 +4,7 @@ export const Documents: CollectionConfig = {
   slug: 'documents',
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'type', 'client', 'createdAt'],
+    defaultColumns: ['title', 'type', 'client', 'source', 'createdAt'],
   },
   upload: {
     mimeTypes: ['application/pdf', 'image/*'],
@@ -30,6 +30,8 @@ export const Documents: CollectionConfig = {
         { label: 'Beratungsprotokoll', value: 'advisory-protocol' },
         { label: 'Analyse', value: 'analysis' },
         { label: 'Korrespondenz', value: 'correspondence' },
+        { label: 'DLZ-Bearbeitung', value: 'dlz' },
+        { label: 'Vertragsdokument', value: 'contract-doc' },
         { label: 'Sonstiges', value: 'other' },
       ],
     },
@@ -38,6 +40,68 @@ export const Documents: CollectionConfig = {
       type: 'relationship',
       relationTo: 'clients',
       label: 'Mandant',
+    },
+    {
+      name: 'source',
+      type: 'select',
+      label: 'Quelle',
+      options: [
+        { label: 'TOS Portal', value: 'tos' },
+        { label: 'Paperless', value: 'paperless' },
+        { label: 'Manuell', value: 'manual' },
+        { label: 'Documenso', value: 'documenso' },
+      ],
+    },
+    {
+      name: 'tosDocumentId',
+      type: 'text',
+      unique: true,
+      label: 'TOS Dokument-ID',
+      admin: {
+        description: 'Für Deduplizierung beim Crawling',
+      },
+    },
+    {
+      name: 'contractNumber',
+      type: 'text',
+      label: 'Vertragsnummer',
+    },
+    {
+      name: 'documentCategory',
+      type: 'text',
+      label: 'Dokumentkategorie',
+      admin: {
+        description: 'z.B. DLZ-Bearbeitung, Antrags-Infoblatt',
+      },
+    },
+    {
+      name: 'productName',
+      type: 'text',
+      label: 'Produktbezeichnung',
+    },
+    {
+      name: 'section',
+      type: 'text',
+      label: 'TOS Sektion',
+      admin: {
+        description: 'z.B. DLZ Bearbeitungen, Vertragsdokumente',
+      },
+    },
+    {
+      name: 'nextcloudPath',
+      type: 'text',
+      label: 'Nextcloud-Pfad',
+    },
+    {
+      name: 'ragStatus',
+      type: 'select',
+      label: 'RAG Status',
+      defaultValue: 'pending',
+      options: [
+        { label: 'Ausstehend', value: 'pending' },
+        { label: 'Eingebettet', value: 'embedded' },
+        { label: 'Fehlgeschlagen', value: 'failed' },
+      ],
     },
     {
       name: 'paperlessId',
