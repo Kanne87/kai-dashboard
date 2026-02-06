@@ -73,6 +73,17 @@ export const Clients: CollectionConfig = {
       ],
     },
     {
+      name: 'tosPersonId',
+      type: 'text',
+      unique: true,
+      index: true,
+      label: 'TOS Mandanten-ID',
+      admin: {
+        description: 'Eindeutige ID aus TOS-Portal für automatisches Matching (z.B. 1330139)',
+        position: 'sidebar',
+      },
+    },
+    {
       name: 'assignedTo',
       type: 'relationship',
       relationTo: 'users',
