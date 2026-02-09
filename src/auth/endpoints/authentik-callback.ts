@@ -88,16 +88,38 @@ export const authentikCallback: Endpoint = {
         tokenExpiration: authConfig.tokenExpiration,
       })
 
-      // Build cookie manually to guarantee correct formatting (Secure, HttpOnly)
+      // Build cookie string manually for correct formatting
       const cookiePrefix = payload.config.cookiePrefix || 'payload'
-      const cookieName = `${cookiePrefix}-token`
-      const maxAge = authConfig.tokenExpiration || 7200
-      const cookieValue = `${cookieName}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
+      const maxAge = authConfig.tokenExpiration || 604800
+      const cookieString = `${cookiePrefix}-token=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
 
-      headers.set('Location', `${baseUrl}${returnTo}`)
-      headers.append('Set-Cookie', cookieValue)
+      // IMPORTANT: Use 200 HTML response instead of 302 redirect
+      // Browsers ignore Set-Cookie on 302 redirects from cross-site navigations
+      // (auth.kailohmann.de -> dashboard.kailohmann.de)
+      const finalUrl = `${baseUrl}${returnTo}`
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Anmeldung erfolgreich</title>
+  <meta http-equiv="refresh" content="0;url=${finalUrl}">
+</head>
+<body>
+  <p>Anmeldung erfolgreich, Weiterleitung...</p>
+  <script>window.location.href="${finalUrl}";</script>
+</body>
+</html>`
 
-      return new Response(null, { headers, status: 302 })
+      // Cookie is set via response header on a 200 response (not a redirect!)
+      // The browser WILL store it because it's a same-origin 200 response
+      return new Response(html, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Set-Cookie': cookieString,
+        },
+      })
     } catch (error) {
       console.error('Authentik callback error:', error)
       return errorRedirect('oauth_failed')
