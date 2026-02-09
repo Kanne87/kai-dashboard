@@ -120,18 +120,30 @@ export async function GET(req: NextRequest) {
       { expiresIn: '7d' },
     )
 
-    // 5. Redirect to frontend with token as cookie
-    const redirectUrl = state || process.env.NEXT_PUBLIC_FRONTEND_URL || `${baseUrl}/admin`
-    const response = NextResponse.redirect(new URL(redirectUrl, baseUrl))
-    response.cookies.set('payload-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
+    // 5. Return HTML page that sets cookie and redirects
+    // Browsers ignore Set-Cookie on 307 redirect responses (known Next.js issue)
+    const redirectTarget = state || '/admin'
+    const finalUrl = redirectTarget.startsWith('http') ? redirectTarget : `${baseUrl}${redirectTarget}`
 
-    return response
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Anmeldung...</title>
+  <script>
+    document.cookie = "payload-token=${token}; path=/; max-age=604800; secure; samesite=lax";
+    window.location.href = "${finalUrl}";
+  </script>
+</head>
+<body>
+  <p>Anmeldung...</p>
+</body>
+</html>`
+
+    return new NextResponse(html, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' },
+    })
   } catch (error) {
     console.error('Authentik OAuth error:', error)
     return NextResponse.redirect(new URL('/admin/login?error=oauth_failed', baseUrl))
