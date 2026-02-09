@@ -1,7 +1,6 @@
 import crypto from 'crypto'
 import {
   type Endpoint,
-  generatePayloadCookie,
   jwtSign,
   parseCookies,
   type PayloadRequest,
@@ -89,12 +88,11 @@ export const authentikCallback: Endpoint = {
         tokenExpiration: authConfig.tokenExpiration,
       })
 
-      // Generate cookie using Payload's own generatePayloadCookie
-      const cookieValue = generatePayloadCookie({
-        collectionAuthConfig: authConfig,
-        cookiePrefix: payload.config.cookiePrefix,
-        token: token!,
-      })
+      // Build cookie manually to guarantee correct formatting (Secure, HttpOnly)
+      const cookiePrefix = payload.config.cookiePrefix || 'payload'
+      const cookieName = `${cookiePrefix}-token`
+      const maxAge = authConfig.tokenExpiration || 7200
+      const cookieValue = `${cookieName}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
 
       headers.set('Location', `${baseUrl}${returnTo}`)
       headers.append('Set-Cookie', cookieValue)

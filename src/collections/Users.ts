@@ -6,6 +6,11 @@ import { authentikStrategy } from '../auth/strategies/authentik'
 export const Users: CollectionConfig = {
   slug: 'users',
   auth: {
+    cookies: {
+      secure: true,
+      sameSite: 'Lax',
+      domain: undefined,
+    },
     strategies: [authentikStrategy],
     tokenExpiration: 60 * 60 * 24 * 7, // 7 days
   },
