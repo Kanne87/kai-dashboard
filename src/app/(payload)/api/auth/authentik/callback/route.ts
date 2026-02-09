@@ -42,6 +42,8 @@ export async function GET(req: NextRequest) {
     const userinfo = await userinfoRes.json()
 
     // 3. Find or create user in Payload
+    console.log('Authentik userinfo:', JSON.stringify(userinfo))
+
     const existingUsers = await payload.find({
       collection: 'users',
       where: {
@@ -104,11 +106,15 @@ export async function GET(req: NextRequest) {
     }
 
     // 4. Create JWT token (same format Payload expects)
+    // Use email directly from Authentik userinfo to avoid stale data
+    const jwtEmail = userinfo.email
+    console.log('JWT payload:', JSON.stringify({ id: user.id, email: jwtEmail }))
+
     const token = jwt.sign(
       {
         id: user.id,
         collection: 'users',
-        email: user.email,
+        email: jwtEmail,
       },
       process.env.PAYLOAD_SECRET!,
       { expiresIn: '7d' },
