@@ -155,16 +155,38 @@ export const authentikCallback: Endpoint = {
 
       console.log('OAuth login successful for:', userinfo.email)
 
-      // 6. Use the token from payload.login() - this is guaranteed to work
-      const cookiePrefix = payload.config.cookiePrefix || 'payload'
-      const cookieName = `${cookiePrefix}-token`
-      const maxAge = 604800 // 7 days
-      const cookieString = `${cookieName}=${loginResult.token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
+      // Check if returnTo is an external URL (cross-domain login)
+      const isExternalReturn = returnTo.startsWith('https://') || returnTo.startsWith('http://')
 
-      // Return HTML page that sets the cookie and redirects
-      // Browsers ignore Set-Cookie on 302 redirects from cross-site navigations
-      const finalUrl = `${baseUrl}${returnTo}`
-      const html = `<!DOCTYPE html>
+      if (isExternalReturn) {
+        // Whitelist of allowed external domains
+        const allowedDomains = [
+          'app.kailohmann.de',
+          'localhost:3001', // lo-board dev
+        ]
+
+        const returnUrl = new URL(returnTo)
+        if (!allowedDomains.includes(returnUrl.host)) {
+          console.error('Unauthorized redirect domain:', returnUrl.host)
+          return errorRedirect('unauthorized_domain')
+        }
+
+        // For cross-domain: pass token as URL parameter
+        // The receiving app will exchange this for its own session
+        const redirectUrl = new URL(returnTo)
+        redirectUrl.searchParams.set('token', loginResult.token!)
+
+        headers.set('Location', redirectUrl.toString())
+        return new Response(null, { headers, status: 302 })
+      } else {
+        // Same-domain: set cookie via HTML page
+        const cookiePrefix = payload.config.cookiePrefix || 'payload'
+        const cookieName = `${cookiePrefix}-token`
+        const maxAge = 604800 // 7 days
+        const cookieString = `${cookieName}=${loginResult.token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
+
+        const finalUrl = `${baseUrl}${returnTo}`
+        const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -177,14 +199,15 @@ export const authentikCallback: Endpoint = {
 </body>
 </html>`
 
-      return new Response(html, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-          'Set-Cookie': cookieString,
-        },
-      })
+        return new Response(html, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Set-Cookie': cookieString,
+          },
+        })
+      }
     } catch (error) {
       console.error('Authentik callback error:', error)
       return errorRedirect('oauth_failed')
