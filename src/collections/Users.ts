@@ -1,7 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { authentikAuth } from '../auth/endpoints/authentik-auth'
 import { authentikCallback } from '../auth/endpoints/authentik-callback'
-import { authentikStrategy } from '../auth/strategies/authentik'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -11,7 +10,6 @@ export const Users: CollectionConfig = {
       sameSite: 'Lax',
       domain: undefined,
     },
-    strategies: [authentikStrategy],
     tokenExpiration: 60 * 60 * 24 * 7, // 7 days
   },
   endpoints: [authentikAuth, authentikCallback],

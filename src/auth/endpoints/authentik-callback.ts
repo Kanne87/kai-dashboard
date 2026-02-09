@@ -1,10 +1,5 @@
 import crypto from 'crypto'
-import {
-  type Endpoint,
-  jwtSign,
-  parseCookies,
-  type PayloadRequest,
-} from 'payload'
+import { type Endpoint, parseCookies, type PayloadRequest } from 'payload'
 import { clearCookie } from '../cookies'
 
 export const authentikCallback: Endpoint = {
@@ -47,55 +42,127 @@ export const authentikCallback: Endpoint = {
     try {
       const payload = req.payload
 
-      // Call payload.auth() which triggers the registered authentik strategy
-      const authResult = await payload.auth({
-        headers: new Headers({
-          'x-auth-strategy': 'authentik',
-          'x-oauth-code': code,
+      // 1. Exchange code for tokens at Authentik
+      const tokenRes = await fetch(process.env.AUTHENTIK_TOKEN_URL!, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          client_id: process.env.AUTHENTIK_CLIENT_ID!,
+          client_secret: process.env.AUTHENTIK_CLIENT_SECRET!,
+          redirect_uri: `${baseUrl}/api/users/auth/authentik/callback`,
         }),
       })
+      const tokens = await tokenRes.json()
 
-      const { user } = authResult as {
-        user: null | {
-          id: number
-          email: string
-          collection: 'users'
-          _strategy?: string
+      if (!tokens.access_token) {
+        console.error('Authentik token error:', tokens)
+        return errorRedirect('token_error')
+      }
+
+      // 2. Fetch user info from Authentik
+      const userinfoRes = await fetch(process.env.AUTHENTIK_USERINFO_URL!, {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      })
+      const userinfo = await userinfoRes.json()
+      console.log('Authentik userinfo:', JSON.stringify(userinfo))
+
+      if (!userinfo.email) {
+        console.error('No email in userinfo')
+        return errorRedirect('no_email')
+      }
+
+      // 3. Find or create user in Payload
+      let user: any = null
+
+      // Try by authProviderId first
+      const byProvider = await payload.find({
+        collection: 'users',
+        where: { authProviderId: { equals: userinfo.sub } },
+        limit: 1,
+      })
+
+      if (byProvider.docs.length > 0) {
+        user = byProvider.docs[0]
+      } else {
+        // Fallback: find by email
+        const byEmail = await payload.find({
+          collection: 'users',
+          where: { email: { equals: userinfo.email } },
+          limit: 1,
+        })
+
+        if (byEmail.docs.length > 0) {
+          user = byEmail.docs[0]
+          // Link to Authentik
+          await payload.update({
+            collection: 'users',
+            id: user.id,
+            data: {
+              authProvider: 'authentik',
+              authProviderId: userinfo.sub,
+            },
+          })
+        } else {
+          // Create new user with role mapping
+          const groups: string[] = userinfo.groups || []
+          let role = 'advisor'
+          if (groups.includes('authentik Admins')) role = 'super-admin'
+          else if (groups.includes('assistenten')) role = 'assistant'
+
+          const tempPassword = crypto.randomUUID() + crypto.randomUUID()
+          user = await payload.create({
+            collection: 'users',
+            data: {
+              email: userinfo.email,
+              name: userinfo.name || userinfo.preferred_username,
+              role,
+              authProvider: 'authentik',
+              authProviderId: userinfo.sub,
+              password: tempPassword,
+            },
+          })
         }
       }
 
-      if (!user) {
-        console.error('Authentication failed: No user returned from strategy')
-        return errorRedirect('auth_failed')
-      }
+      // 4. Generate a temporary password and use payload.login()
+      // This is the ONLY way to get a token that Payload will accept
+      const tempPassword = crypto.randomUUID() + crypto.randomUUID()
 
-      // Generate token using Payload's own jwtSign (uses hashed secret internally)
-      const collection = payload.collections['users']
-      const authConfig = collection.config.auth
-      const secret = crypto
-        .createHash('sha256')
-        .update(payload.config.secret)
-        .digest('hex')
-        .slice(0, 32)
-
-      const { token } = await jwtSign({
-        fieldsToSign: {
-          collection: 'users',
-          email: user.email,
-          id: user.id,
+      await payload.update({
+        collection: 'users',
+        id: user.id,
+        data: {
+          password: tempPassword,
+          name: userinfo.name || userinfo.preferred_username || user.name,
         },
-        secret,
-        tokenExpiration: authConfig.tokenExpiration,
       })
 
-      // Build cookie string manually for correct formatting
-      const cookiePrefix = payload.config.cookiePrefix || 'payload'
-      const maxAge = authConfig.tokenExpiration || 604800
-      const cookieString = `${cookiePrefix}-token=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
+      // 5. Login with the temporary password to get a valid token
+      const loginResult = await payload.login({
+        collection: 'users',
+        data: {
+          email: userinfo.email,
+          password: tempPassword,
+        },
+      })
 
-      // IMPORTANT: Use 200 HTML response instead of 302 redirect
+      if (!loginResult.token) {
+        console.error('Login failed - no token returned')
+        return errorRedirect('login_failed')
+      }
+
+      console.log('OAuth login successful for:', userinfo.email)
+
+      // 6. Use the token from payload.login() - this is guaranteed to work
+      const cookiePrefix = payload.config.cookiePrefix || 'payload'
+      const cookieName = `${cookiePrefix}-token`
+      const maxAge = 604800 // 7 days
+      const cookieString = `${cookieName}=${loginResult.token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
+
+      // Return HTML page that sets the cookie and redirects
       // Browsers ignore Set-Cookie on 302 redirects from cross-site navigations
-      // (auth.kailohmann.de -> dashboard.kailohmann.de)
       const finalUrl = `${baseUrl}${returnTo}`
       const html = `<!DOCTYPE html>
 <html>
@@ -110,8 +177,6 @@ export const authentikCallback: Endpoint = {
 </body>
 </html>`
 
-      // Cookie is set via response header on a 200 response (not a redirect!)
-      // The browser WILL store it because it's a same-origin 200 response
       return new Response(html, {
         status: 200,
         headers: {
