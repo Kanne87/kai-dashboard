@@ -9,8 +9,10 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get('code')
   const state = searchParams.get('state')
 
+  const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!
+
   if (!code) {
-    return NextResponse.redirect(new URL('/admin/login?error=no_code', req.url))
+    return NextResponse.redirect(new URL('/admin/login?error=no_code', baseUrl))
   }
 
   try {
@@ -60,23 +62,45 @@ export async function GET(req: NextRequest) {
         },
       })
     } else {
-      // Map Authentik groups to Payload roles
-      const groups: string[] = userinfo.groups || []
-      let role = 'advisor'
-      if (groups.includes('authentik Admins')) role = 'super-admin'
-      else if (groups.includes('assistenten')) role = 'assistant'
-
-      user = await payload.create({
+      // Fallback: search by email to link existing local users
+      const emailUsers = await payload.find({
         collection: 'users',
-        data: {
-          email: userinfo.email,
-          name: userinfo.name || userinfo.preferred_username,
-          role,
-          authProvider: 'authentik',
-          authProviderId: userinfo.sub,
-          password: crypto.randomUUID(), // Dummy password, login only via Authentik
+        where: {
+          email: { equals: userinfo.email },
         },
       })
+
+      if (emailUsers.docs.length > 0) {
+        // Link existing user to Authentik
+        user = emailUsers.docs[0]
+        await payload.update({
+          collection: 'users',
+          id: user.id,
+          data: {
+            name: userinfo.name || userinfo.preferred_username,
+            authProvider: 'authentik',
+            authProviderId: userinfo.sub,
+          },
+        })
+      } else {
+        // Create new user, map Authentik groups to Payload roles
+        const groups: string[] = userinfo.groups || []
+        let role = 'advisor'
+        if (groups.includes('authentik Admins')) role = 'super-admin'
+        else if (groups.includes('assistenten')) role = 'assistant'
+
+        user = await payload.create({
+          collection: 'users',
+          data: {
+            email: userinfo.email,
+            name: userinfo.name || userinfo.preferred_username,
+            role,
+            authProvider: 'authentik',
+            authProviderId: userinfo.sub,
+            password: crypto.randomUUID(), // Dummy password, login only via Authentik
+          },
+        })
+      }
     }
 
     // 4. Create JWT token (same format Payload expects)
@@ -91,8 +115,8 @@ export async function GET(req: NextRequest) {
     )
 
     // 5. Redirect to frontend with token as cookie
-    const redirectUrl = state || process.env.NEXT_PUBLIC_FRONTEND_URL || '/admin'
-    const response = NextResponse.redirect(new URL(redirectUrl, req.url))
+    const redirectUrl = state || process.env.NEXT_PUBLIC_FRONTEND_URL || `${baseUrl}/admin`
+    const response = NextResponse.redirect(new URL(redirectUrl, baseUrl))
     response.cookies.set('payload-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -104,6 +128,6 @@ export async function GET(req: NextRequest) {
     return response
   } catch (error) {
     console.error('Authentik OAuth error:', error)
-    return NextResponse.redirect(new URL('/admin/login?error=oauth_failed', req.url))
+    return NextResponse.redirect(new URL('/admin/login?error=oauth_failed', baseUrl))
   }
 }
