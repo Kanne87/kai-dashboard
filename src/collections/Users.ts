@@ -5,6 +5,7 @@ import { authentikCallback } from '../auth/endpoints/authentik-callback'
 export const Users: CollectionConfig = {
   slug: 'users',
   auth: {
+    useAPIKey: true,
     cookies: {
       secure: true,
       sameSite: 'Lax',
