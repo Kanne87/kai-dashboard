@@ -14,6 +14,7 @@ import { Communication } from './collections/Communication'
 import { Documents } from './collections/Documents'
 import { Tags } from './collections/Tags'
 import { Automations } from './collections/Automations'
+import { SystemStatus } from './collections/SystemStatus'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -34,6 +35,7 @@ export default buildConfig({
     Documents,
     Tags,
     Automations,
+    SystemStatus,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
