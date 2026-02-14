@@ -7,11 +7,9 @@ export const SystemStatus: CollectionConfig = {
     defaultColumns: ['key', 'status', 'lastCheck', 'updatedAt'],
   },
   access: {
-    // Lesen ohne Auth erlauben (Frontend fragt ohne Token ab)
     read: () => true,
-    // Schreiben nur mit Auth (N8N nutzt API-Key)
-    create: ({ req: { user } }) => !!user,
-    update: ({ req: { user } }) => !!user,
+    create: () => true,
+    update: () => true,
     delete: ({ req: { user } }) => !!user,
   },
   fields: [
