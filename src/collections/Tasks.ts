@@ -4,7 +4,10 @@ export const Tasks: CollectionConfig = {
   slug: 'tasks',
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'status', 'priority', 'dueDate', 'assignedTo'],
+    defaultColumns: ['title', 'category', 'priority', 'dueDate', 'client', 'status'],
+  },
+  hooks: {
+    // Placeholder für späteren Exchange-Sync Hook
   },
   fields: [
     {
@@ -15,37 +18,46 @@ export const Tasks: CollectionConfig = {
     },
     {
       name: 'description',
-      type: 'richText',
+      type: 'textarea',
       label: 'Beschreibung',
     },
     {
       name: 'status',
       type: 'select',
       required: true,
-      defaultValue: 'inbox',
+      defaultValue: 'open',
+      label: 'Status',
       options: [
-        { label: 'Eingang', value: 'inbox' },
-        { label: 'Zu erledigen', value: 'todo' },
-        { label: 'In Bearbeitung', value: 'in-progress' },
-        { label: 'Warten auf Rückmeldung', value: 'waiting' },
+        { label: 'Offen', value: 'open' },
         { label: 'Erledigt', value: 'done' },
       ],
     },
     {
       name: 'priority',
+      type: 'checkbox',
+      defaultValue: false,
+      label: 'Priorität',
+      admin: {
+        description: 'Aufgabe wird in der Liste hervorgehoben',
+      },
+    },
+    {
+      name: 'category',
       type: 'select',
       required: true,
-      defaultValue: 'medium',
+      label: 'Kategorie',
       options: [
-        { label: 'Dringend', value: 'urgent' },
-        { label: 'Hoch', value: 'high' },
-        { label: 'Mittel', value: 'medium' },
-        { label: 'Niedrig', value: 'low' },
+        { label: 'Wiedervorlage', value: 'wiedervorlage' },
+        { label: 'Aufgabe', value: 'aufgabe' },
+        { label: 'Schaden', value: 'schaden' },
+        { label: 'Nacharbeit', value: 'nacharbeit' },
+        { label: 'Empfehlung', value: 'empfehlung' },
       ],
     },
     {
       name: 'dueDate',
       type: 'date',
+      required: true,
       label: 'Fällig am',
       admin: {
         date: {
@@ -66,23 +78,16 @@ export const Tasks: CollectionConfig = {
       label: 'Haushalt',
     },
     {
+      name: 'contract',
+      type: 'relationship',
+      relationTo: 'contracts',
+      label: 'Vertrag',
+    },
+    {
       name: 'assignedTo',
       type: 'relationship',
       relationTo: 'users',
       label: 'Zugewiesen an',
-    },
-    {
-      name: 'category',
-      type: 'select',
-      label: 'Kategorie',
-      options: [
-        { label: 'Beratung', value: 'consultation' },
-        { label: 'Dokument', value: 'document' },
-        { label: 'Nachfassen', value: 'follow-up' },
-        { label: 'Vertrag', value: 'contract' },
-        { label: 'Termin', value: 'appointment' },
-        { label: 'Sonstiges', value: 'other' },
-      ],
     },
     {
       name: 'tags',
@@ -97,6 +102,48 @@ export const Tasks: CollectionConfig = {
       relationTo: 'documents',
       hasMany: true,
       label: 'Verknüpfte Dokumente',
+    },
+    // === Exchange Sync ===
+    {
+      name: 'exchangeItemId',
+      type: 'text',
+      label: 'Exchange Task ID',
+      admin: {
+        position: 'sidebar',
+        description: 'Automatisch gesetzt bei Exchange-Sync',
+        readOnly: true,
+      },
+    },
+    {
+      name: 'exchangeChangeKey',
+      type: 'text',
+      label: 'Exchange Change Key',
+      admin: {
+        position: 'sidebar',
+        description: 'Wird für Updates benötigt',
+        readOnly: true,
+      },
+    },
+    {
+      name: 'exchangeSyncedAt',
+      type: 'date',
+      label: 'Zuletzt synchronisiert',
+      admin: {
+        position: 'sidebar',
+        date: {
+          displayFormat: 'dd.MM.yyyy HH:mm',
+        },
+        readOnly: true,
+      },
+    },
+    // === Tenant ===
+    {
+      name: 'tenant',
+      type: 'relationship',
+      relationTo: 'tenants',
+      admin: {
+        position: 'sidebar',
+      },
     },
   ],
 }

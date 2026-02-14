@@ -16,6 +16,7 @@ import { Communication } from './collections/Communication'
 import { Documents } from './collections/Documents'
 import { Tags } from './collections/Tags'
 import { Automations } from './collections/Automations'
+import { Contracts } from './collections/Contracts'
 import { SystemStatus } from './collections/SystemStatus'
 
 const filename = fileURLToPath(import.meta.url)
@@ -39,6 +40,7 @@ export default buildConfig({
     Documents,
     Tags,
     Automations,
+    Contracts,
     SystemStatus,
   ],
   editor: lexicalEditor(),
