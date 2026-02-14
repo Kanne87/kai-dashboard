@@ -18,6 +18,11 @@ import { Tags } from './collections/Tags'
 import { Automations } from './collections/Automations'
 import { Contracts } from './collections/Contracts'
 import { SystemStatus } from './collections/SystemStatus'
+import { Termine } from './collections/Termine'
+import { Vorgaenge } from './collections/Vorgaenge'
+import { Vorgangsgruppen } from './collections/Vorgangsgruppen'
+import { vorgaengeUebersicht } from './endpoints/vorgaenge-uebersicht'
+import { vorgaengeAusTermin } from './endpoints/vorgaenge-aus-termin'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -42,7 +47,11 @@ export default buildConfig({
     Automations,
     Contracts,
     SystemStatus,
+    Termine,
+    Vorgangsgruppen,
+    Vorgaenge,
   ],
+  endpoints: [vorgaengeUebersicht, vorgaengeAusTermin],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

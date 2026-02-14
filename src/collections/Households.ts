@@ -133,5 +133,17 @@ export const Households: CollectionConfig = {
         position: 'sidebar',
       },
     },
+
+    // === Virtuelle Beziehungen (Joins) ===
+    {
+      name: 'termine',
+      type: 'join',
+      collection: 'termine',
+      on: 'haushalt',
+      label: 'Termine',
+      admin: {
+        description: 'Alle verknüpften Termine dieses Haushalts',
+      },
+    },
   ],
 }

@@ -213,5 +213,17 @@ export const Clients: CollectionConfig = {
         position: 'sidebar',
       },
     },
+
+    // === Virtuelle Beziehungen (Joins) ===
+    {
+      name: 'vorgaenge',
+      type: 'join',
+      collection: 'vorgaenge',
+      on: 'mandant',
+      label: 'Vorgänge',
+      admin: {
+        description: 'Alle verknüpften Vorgänge dieses Mandanten',
+      },
+    },
   ],
 }
