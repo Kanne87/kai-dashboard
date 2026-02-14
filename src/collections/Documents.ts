@@ -42,6 +42,12 @@ export const Documents: CollectionConfig = {
       label: 'Mandant',
     },
     {
+      name: 'household',
+      type: 'relationship',
+      relationTo: 'households',
+      label: 'Haushalt',
+    },
+    {
       name: 'source',
       type: 'select',
       label: 'Quelle',

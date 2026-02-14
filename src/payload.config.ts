@@ -8,7 +8,9 @@ import { fileURLToPath } from 'url'
 // Collections
 import { Users } from './collections/Users'
 import { Tenants } from './collections/Tenants'
+import { Households } from './collections/Households'
 import { Clients } from './collections/Clients'
+import { HouseholdEvents } from './collections/HouseholdEvents'
 import { Tasks } from './collections/Tasks'
 import { Communication } from './collections/Communication'
 import { Documents } from './collections/Documents'
@@ -29,7 +31,9 @@ export default buildConfig({
   collections: [
     Users,
     Tenants,
+    Households,
     Clients,
+    HouseholdEvents,
     Tasks,
     Communication,
     Documents,

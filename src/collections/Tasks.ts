@@ -60,6 +60,12 @@ export const Tasks: CollectionConfig = {
       label: 'Mandant',
     },
     {
+      name: 'household',
+      type: 'relationship',
+      relationTo: 'households',
+      label: 'Haushalt',
+    },
+    {
       name: 'assignedTo',
       type: 'relationship',
       relationTo: 'users',
