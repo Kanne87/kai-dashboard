@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { tosImportParse, tosImportExecute } from '../import/tos-mandantenliste'
 
 export const Households: CollectionConfig = {
   slug: 'households',
@@ -7,6 +8,7 @@ export const Households: CollectionConfig = {
     defaultColumns: ['displayName', 'addressCity', 'tosFaNumber', 'status', 'tosLastSynced'],
     group: 'Mandanten',
   },
+  endpoints: [tosImportParse, tosImportExecute],
   fields: [
     // === Identifikation ===
     {
@@ -38,6 +40,7 @@ export const Households: CollectionConfig = {
         description: 'Nachname der Hauptperson (wird automatisch gesetzt)',
       },
     },
+
     // === Hauptperson ===
     {
       name: 'primaryPerson',
@@ -48,6 +51,7 @@ export const Households: CollectionConfig = {
         description: 'Mandant (Stand M) – die zentrale Ansprechperson des Haushalts',
       },
     },
+
     // === Adresse (vom Hauptmandanten übernommen) ===
     {
       name: 'address',
@@ -59,6 +63,7 @@ export const Households: CollectionConfig = {
         { name: 'city', type: 'text', label: 'Ort' },
       ],
     },
+
     // === Status ===
     {
       name: 'status',
@@ -72,6 +77,7 @@ export const Households: CollectionConfig = {
         { label: 'Archiviert', value: 'archived' },
       ],
     },
+
     // === Sync ===
     {
       name: 'tosLastSynced',
@@ -98,6 +104,7 @@ export const Households: CollectionConfig = {
         position: 'sidebar',
       },
     },
+
     // === Sonstiges ===
     {
       name: 'notes',
