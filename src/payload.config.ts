@@ -18,6 +18,7 @@ import { Tags } from './collections/Tags'
 import { Automations } from './collections/Automations'
 import { Contracts } from './collections/Contracts'
 import { SystemStatus } from './collections/SystemStatus'
+import { TaskGroups } from './collections/TaskGroups'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -36,6 +37,7 @@ export default buildConfig({
     Clients,
     HouseholdEvents,
     Tasks,
+    TaskGroups,
     Communication,
     Documents,
     Tags,
