@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { exchangeSyncAfterChange } from '../hooks/exchangeSyncHook'
 
 export const Tasks: CollectionConfig = {
   slug: 'tasks',
@@ -7,7 +8,7 @@ export const Tasks: CollectionConfig = {
     defaultColumns: ['title', 'category', 'priority', 'dueDate', 'client', 'status'],
   },
   hooks: {
-    // Placeholder für späteren Exchange-Sync Hook
+    afterChange: [exchangeSyncAfterChange],
   },
   fields: [
     {
@@ -65,6 +66,7 @@ export const Tasks: CollectionConfig = {
         },
       },
     },
+    // === Verknüpfungen ===
     {
       name: 'client',
       type: 'relationship',
@@ -103,10 +105,38 @@ export const Tasks: CollectionConfig = {
       hasMany: true,
       label: 'Verknüpfte Dokumente',
     },
+    // === Gruppierung ===
+    {
+      name: 'group',
+      type: 'relationship',
+      relationTo: 'task-groups',
+      hasMany: false,
+      label: 'Gruppe',
+    },
+    {
+      name: 'groupOrder',
+      type: 'number',
+      defaultValue: 0,
+      label: 'Reihenfolge in Gruppe',
+    },
+    // === Quelle ===
+    {
+      name: 'source',
+      type: 'select',
+      defaultValue: 'manual',
+      label: 'Quelle',
+      options: [
+        { label: 'Manuell', value: 'manual' },
+        { label: 'Exchange Import', value: 'exchange_import' },
+        { label: 'Workflow', value: 'workflow' },
+        { label: 'Termin-Nachbereitung', value: 'appointment' },
+      ],
+    },
     // === Exchange Sync ===
     {
       name: 'exchangeItemId',
       type: 'text',
+      index: true,
       label: 'Exchange Task ID',
       admin: {
         position: 'sidebar',
@@ -119,9 +149,7 @@ export const Tasks: CollectionConfig = {
       type: 'text',
       label: 'Exchange Change Key',
       admin: {
-        position: 'sidebar',
-        description: 'Wird für Updates benötigt',
-        readOnly: true,
+        hidden: true,
       },
     },
     {
