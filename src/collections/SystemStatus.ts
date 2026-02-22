@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isSuperAdmin } from '../access'
+import { isAuthenticated, isSuperAdmin } from '../access'
 
 export const SystemStatus: CollectionConfig = {
   slug: 'system-status',
@@ -8,7 +8,8 @@ export const SystemStatus: CollectionConfig = {
     // Wird vom Frontend (app.kailohmann.de) ohne Auth abgefragt.
     read: () => true,
     create: isSuperAdmin,
-    update: isSuperAdmin,
+    // Authenticated update – lo-board aktualisiert Status via API-Key
+    update: isAuthenticated,
     delete: isSuperAdmin,
   },
   admin: {
