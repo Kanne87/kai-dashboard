@@ -1,36 +1,23 @@
 import type { CollectionConfig } from 'payload'
+import { isAuthenticated, isSuperAdmin } from '../access'
 
 export const Tenants: CollectionConfig = {
   slug: 'tenants',
-  admin: {
-    useAsTitle: 'name',
+  access: {
+    read: isAuthenticated,
+    create: isSuperAdmin,
+    update: isSuperAdmin,
+    delete: isSuperAdmin,
   },
+  admin: { useAsTitle: 'name' },
   fields: [
-    {
-      name: 'name',
-      type: 'text',
-      required: true,
-      label: 'Firmenname',
-    },
-    {
-      name: 'slug',
-      type: 'text',
-      required: true,
-      unique: true,
-      admin: {
-        description: 'URL-freundlicher Bezeichner (z.B. "kai-lohmann")',
-      },
-    },
+    { name: 'name', type: 'text', required: true },
+    { name: 'slug', type: 'text', required: true, unique: true },
     {
       name: 'domains',
       type: 'array',
-      label: 'Domains',
       fields: [
-        {
-          name: 'domain',
-          type: 'text',
-          required: true,
-        },
+        { name: 'domain', type: 'text', required: true },
       ],
     },
   ],

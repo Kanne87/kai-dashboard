@@ -1,7 +1,9 @@
 import type { CollectionConfig } from 'payload'
+import { apiAccess } from '../access'
 
 export const TaskGroups: CollectionConfig = {
   slug: 'task-groups',
+  access: apiAccess,
   labels: { singular: 'Gruppe', plural: 'Gruppen' },
   admin: { useAsTitle: 'title' },
   fields: [

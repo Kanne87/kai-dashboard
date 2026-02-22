@@ -1,55 +1,25 @@
 import type { CollectionConfig } from 'payload'
+import { standardAccess } from '../access'
 
 export const Contracts: CollectionConfig = {
   slug: 'contracts',
+  access: standardAccess,
   admin: {
-    useAsTitle: 'displayTitle',
-    defaultColumns: ['displayTitle', 'company', 'category', 'contractNumber', 'client', 'status'],
-    group: 'Mandanten',
+    useAsTitle: 'contractNumber',
+    defaultColumns: ['contractNumber', 'company', 'category', 'client', 'status'],
   },
   fields: [
     {
-      name: 'displayTitle',
+      name: 'contractNumber',
       type: 'text',
-      label: 'Anzeigename',
-      admin: {
-        description: 'Wird automatisch generiert: Kategorie | Gesellschaft | Vertragsnummer',
-        readOnly: true,
-      },
-      hooks: {
-        beforeValidate: [
-          ({ data }) => {
-            if (data) {
-              const parts = [data.category, data.company, data.contractNumber].filter(Boolean)
-              return parts.join(' | ') || 'Neuer Vertrag'
-            }
-          },
-        ],
-      },
-    },
-    {
-      name: 'client',
-      type: 'relationship',
-      relationTo: 'clients',
       required: true,
-      label: 'Mandant',
-      index: true,
-    },
-    {
-      name: 'household',
-      type: 'relationship',
-      relationTo: 'households',
-      label: 'Haushalt',
-      index: true,
+      label: 'Vertragsnummer',
     },
     {
       name: 'company',
       type: 'text',
       required: true,
       label: 'Gesellschaft',
-      admin: {
-        description: 'z.B. Allianz, HDI, DWS, Alte Leipziger',
-      },
     },
     {
       name: 'category',
@@ -57,91 +27,78 @@ export const Contracts: CollectionConfig = {
       required: true,
       label: 'Sparte',
       options: [
-        { label: 'Leben', value: 'leben' },
-        { label: 'Sach', value: 'sach' },
-        { label: 'Kranken', value: 'kranken' },
-        { label: 'Investment', value: 'investment' },
-        { label: 'Baufinanzierung', value: 'baufi' },
-        { label: 'bAV', value: 'bav' },
-        { label: 'Sonstiges', value: 'sonstig' },
+        { label: 'Lebensversicherung', value: 'LV' },
+        { label: 'BU-Versicherung', value: 'BU' },
+        { label: 'Private Krankenversicherung', value: 'PKV' },
+        { label: 'Hausratversicherung', value: 'Hausrat' },
+        { label: 'Privathaftpflicht', value: 'PHV' },
+        { label: 'KFZ-Versicherung', value: 'KFZ' },
+        { label: 'Rechtsschutz', value: 'RS' },
+        { label: 'Unfallversicherung', value: 'Unfall' },
+        { label: 'Wohngebäude', value: 'Wohngebäude' },
+        { label: 'Riester', value: 'Riester' },
+        { label: 'Rürup', value: 'Rürup' },
+        { label: 'bAV', value: 'bAV' },
+        { label: 'Depot/Fonds', value: 'Depot' },
+        { label: 'Gewerbe', value: 'Gewerbe' },
+        { label: 'Sonstige', value: 'Sonstige' },
       ],
-    },
-    {
-      name: 'contractNumber',
-      type: 'text',
-      label: 'Vertragsnummer',
-      admin: {
-        description: 'Vertragsnummer bei der Gesellschaft',
-      },
-    },
-    {
-      name: 'product',
-      type: 'text',
-      label: 'Produkt',
-      admin: {
-        description: 'z.B. BU Comfort, Top Dividende, Riester Zulagen',
-      },
     },
     {
       name: 'status',
       type: 'select',
-      required: true,
       defaultValue: 'active',
       label: 'Status',
       options: [
         { label: 'Aktiv', value: 'active' },
         { label: 'Beantragt', value: 'pending' },
-        { label: 'Ruhend', value: 'dormant' },
         { label: 'Gekündigt', value: 'cancelled' },
-        { label: 'Abgelaufen', value: 'expired' },
+        { label: 'Beitragsfrei', value: 'paid-up' },
+      ],
+    },
+    {
+      name: 'client',
+      type: 'relationship',
+      relationTo: 'clients',
+      label: 'Mandant',
+    },
+    {
+      name: 'household',
+      type: 'relationship',
+      relationTo: 'households',
+      label: 'Haushalt',
+    },
+    {
+      name: 'premium',
+      type: 'group',
+      label: 'Beitrag',
+      fields: [
+        { name: 'amount', type: 'number', label: 'Betrag (EUR)' },
+        {
+          name: 'interval',
+          type: 'select',
+          label: 'Zahlweise',
+          options: [
+            { label: 'Monatlich', value: 'monthly' },
+            { label: 'Vierteljährlich', value: 'quarterly' },
+            { label: 'Halbjährlich', value: 'semi-annual' },
+            { label: 'Jährlich', value: 'annual' },
+            { label: 'Einmalbeitrag', value: 'single' },
+          ],
+        },
       ],
     },
     {
       name: 'startDate',
       type: 'date',
       label: 'Vertragsbeginn',
-      admin: {
-        date: { displayFormat: 'dd.MM.yyyy' },
-      },
+      admin: { date: { displayFormat: 'dd.MM.yyyy' } },
     },
     {
       name: 'endDate',
       type: 'date',
-      label: 'Vertragsende / Ablauf',
-      admin: {
-        date: { displayFormat: 'dd.MM.yyyy' },
-      },
-    },
-    {
-      name: 'premium',
-      type: 'number',
-      label: 'Beitrag (€)',
-      admin: {
-        description: 'Monatlicher oder jährlicher Beitrag',
-      },
-    },
-    {
-      name: 'premiumInterval',
-      type: 'select',
-      label: 'Zahlweise',
-      options: [
-        { label: 'Monatlich', value: 'monthly' },
-        { label: 'Vierteljährlich', value: 'quarterly' },
-        { label: 'Halbjährlich', value: 'semi-annual' },
-        { label: 'Jährlich', value: 'annual' },
-        { label: 'Einmalbeitrag', value: 'single' },
-      ],
-    },
-    // === TOS Sync ===
-    {
-      name: 'tosContractId',
-      type: 'text',
-      unique: true,
-      label: 'TOS Antrags-/Vertragsnummer',
-      admin: {
-        description: 'antrag-Parameter aus TOS URL (z.B. 3698693)',
-        position: 'sidebar',
-      },
+      label: 'Vertragsende',
+      admin: { date: { displayFormat: 'dd.MM.yyyy' } },
     },
     {
       name: 'notes',
@@ -149,16 +106,17 @@ export const Contracts: CollectionConfig = {
       label: 'Notizen',
     },
     {
-      name: 'tags',
+      name: 'documents',
       type: 'relationship',
-      relationTo: 'tags',
+      relationTo: 'documents',
       hasMany: true,
-      label: 'Tags',
+      label: 'Dokumente',
     },
     {
       name: 'tenant',
       type: 'relationship',
       relationTo: 'tenants',
+      required: true,
       admin: {
         position: 'sidebar',
       },

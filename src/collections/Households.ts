@@ -1,58 +1,37 @@
 import type { CollectionConfig } from 'payload'
-import { tosImportParse, tosImportExecute } from '../import/tos-mandantenliste'
+import { standardAccess } from '../access'
 
 export const Households: CollectionConfig = {
   slug: 'households',
+  access: standardAccess,
   admin: {
-    useAsTitle: 'displayName',
-    defaultColumns: ['displayName', 'addressCity', 'tosFaNumber', 'status', 'tosLastSynced'],
-    group: 'Mandanten',
+    useAsTitle: 'name',
+    defaultColumns: ['name', 'status', 'advisor'],
   },
-  endpoints: [tosImportParse, tosImportExecute],
   fields: [
-    // === Identifikation ===
     {
-      name: 'tosFaNumber',
-      type: 'text',
-      unique: true,
-      index: true,
-      label: 'FA-Nummer',
-      admin: {
-        description: 'Finanzanalyse-Nummer aus TOS – eindeutiger Schlüssel pro Haushalt',
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'tosFaPromo',
-      type: 'text',
-      label: 'FA Promo',
-      admin: {
-        description: 'Zeitraum der Finanzanalyse (z.B. 2022/05)',
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'displayName',
+      name: 'name',
       type: 'text',
       required: true,
-      label: 'Anzeigename',
-      admin: {
-        description: 'Nachname der Hauptperson (wird automatisch gesetzt)',
-      },
+      label: 'Haushaltsname',
     },
-
-    // === Hauptperson ===
     {
-      name: 'primaryPerson',
-      type: 'relationship',
-      relationTo: 'clients',
-      label: 'Hauptperson',
-      admin: {
-        description: 'Mandant (Stand M) – die zentrale Ansprechperson des Haushalts',
-      },
+      name: 'status',
+      type: 'select',
+      defaultValue: 'active',
+      label: 'Status',
+      options: [
+        { label: 'Aktiv', value: 'active' },
+        { label: 'Interessent', value: 'prospect' },
+        { label: 'Inaktiv', value: 'inactive' },
+      ],
     },
-
-    // === Adresse (vom Hauptmandanten übernommen) ===
+    {
+      name: 'advisor',
+      type: 'relationship',
+      relationTo: 'users',
+      label: 'Berater',
+    },
     {
       name: 'address',
       type: 'group',
@@ -60,55 +39,12 @@ export const Households: CollectionConfig = {
       fields: [
         { name: 'street', type: 'text', label: 'Straße' },
         { name: 'zip', type: 'text', label: 'PLZ' },
-        { name: 'city', type: 'text', label: 'Ort' },
+        { name: 'city', type: 'text', label: 'Stadt' },
       ],
     },
-
-    // === Status ===
-    {
-      name: 'status',
-      type: 'select',
-      required: true,
-      defaultValue: 'active',
-      label: 'Status',
-      options: [
-        { label: 'Aktiv', value: 'active' },
-        { label: 'Inaktiv', value: 'inactive' },
-        { label: 'Archiviert', value: 'archived' },
-      ],
-    },
-
-    // === Sync ===
-    {
-      name: 'tosLastSynced',
-      type: 'date',
-      label: 'Zuletzt synchronisiert',
-      admin: {
-        date: {
-          displayFormat: 'dd.MM.yyyy HH:mm',
-        },
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'tosSyncStatus',
-      type: 'select',
-      defaultValue: 'never',
-      label: 'Sync-Status',
-      options: [
-        { label: 'Synchronisiert', value: 'synced' },
-        { label: 'Veraltet', value: 'outdated' },
-        { label: 'Nie synchronisiert', value: 'never' },
-      ],
-      admin: {
-        position: 'sidebar',
-      },
-    },
-
-    // === Sonstiges ===
     {
       name: 'notes',
-      type: 'richText',
+      type: 'textarea',
       label: 'Notizen',
     },
     {
@@ -119,16 +55,29 @@ export const Households: CollectionConfig = {
       label: 'Tags',
     },
     {
-      name: 'assignedTo',
-      type: 'relationship',
-      relationTo: 'users',
-      label: 'Zuständiger Berater',
+      name: 'yearlyReviewMonth',
+      type: 'select',
+      label: 'Jahresgespräch (Monat)',
+      options: [
+        { label: 'Januar', value: '1' },
+        { label: 'Februar', value: '2' },
+        { label: 'März', value: '3' },
+        { label: 'April', value: '4' },
+        { label: 'Mai', value: '5' },
+        { label: 'Juni', value: '6' },
+        { label: 'Juli', value: '7' },
+        { label: 'August', value: '8' },
+        { label: 'September', value: '9' },
+        { label: 'Oktober', value: '10' },
+        { label: 'November', value: '11' },
+        { label: 'Dezember', value: '12' },
+      ],
     },
     {
       name: 'tenant',
       type: 'relationship',
       relationTo: 'tenants',
-      label: 'Mandant (Tenant)',
+      required: true,
       admin: {
         position: 'sidebar',
       },

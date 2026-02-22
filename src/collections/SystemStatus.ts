@@ -1,85 +1,49 @@
 import type { CollectionConfig } from 'payload'
+import { isAuthenticated, isSuperAdmin } from '../access'
 
 export const SystemStatus: CollectionConfig = {
   slug: 'system-status',
-  admin: {
-    useAsTitle: 'key',
-    defaultColumns: ['key', 'status', 'lastCheck', 'updatedAt'],
-  },
   access: {
-    read: () => true,
-    create: () => true,
-    update: () => true,
-    delete: ({ req: { user } }) => !!user,
+    read: isAuthenticated,
+    create: isSuperAdmin,
+    update: isSuperAdmin,
+    delete: isSuperAdmin,
+  },
+  admin: {
+    useAsTitle: 'service',
   },
   fields: [
     {
-      name: 'key',
+      name: 'service',
       type: 'text',
       required: true,
-      unique: true,
-      label: 'Service-Schlüssel',
-      admin: {
-        description: 'z.B. tos-session, paperless, ollama',
-      },
+      label: 'Service',
     },
     {
       name: 'status',
       type: 'select',
-      required: true,
       label: 'Status',
-      defaultValue: 'inactive',
       options: [
-        { label: 'Aktiv', value: 'active' },
-        { label: 'Inaktiv', value: 'inactive' },
-        { label: 'Fehler', value: 'error' },
+        { label: 'Online', value: 'online' },
+        { label: 'Degraded', value: 'degraded' },
+        { label: 'Offline', value: 'offline' },
       ],
     },
     {
-      name: 'lastLogin',
-      type: 'date',
-      label: 'Letzter Login',
-      admin: {
-        date: {
-          pickerAppearance: 'dayAndTime',
-        },
-      },
-    },
-    {
-      name: 'lastCheck',
-      type: 'date',
-      label: 'Letzte Prüfung',
-      admin: {
-        date: {
-          pickerAppearance: 'dayAndTime',
-        },
-      },
-    },
-    {
-      name: 'expiresAt',
-      type: 'date',
-      label: 'Gültig bis',
-      admin: {
-        date: {
-          pickerAppearance: 'dayAndTime',
-        },
-      },
-    },
-    {
-      name: 'message',
+      name: 'url',
       type: 'text',
-      label: 'Status-Nachricht',
-      admin: {
-        description: 'z.B. Fehlermeldung oder Info',
-      },
+      label: 'URL',
     },
     {
-      name: 'metadata',
-      type: 'json',
-      label: 'Zusätzliche Daten',
-      admin: {
-        description: 'z.B. Session-Cookie-Name, Cookie-Count',
-      },
+      name: 'lastChecked',
+      type: 'date',
+      label: 'Zuletzt geprüft',
+      admin: { date: { displayFormat: 'dd.MM.yyyy HH:mm' } },
+    },
+    {
+      name: 'notes',
+      type: 'textarea',
+      label: 'Notizen',
     },
   ],
 }

@@ -1,25 +1,12 @@
 import type { CollectionConfig } from 'payload'
+import { standardAccess } from '../access'
 
 export const Tags: CollectionConfig = {
   slug: 'tags',
-  admin: {
-    useAsTitle: 'name',
-  },
+  access: standardAccess,
+  admin: { useAsTitle: 'name' },
   fields: [
-    {
-      name: 'name',
-      type: 'text',
-      required: true,
-      unique: true,
-      label: 'Name',
-    },
-    {
-      name: 'color',
-      type: 'text',
-      label: 'Farbe (Hex)',
-      admin: {
-        description: 'z.B. #3B82F6',
-      },
-    },
+    { name: 'name', type: 'text', required: true },
+    { name: 'color', type: 'text' },
   ],
 }

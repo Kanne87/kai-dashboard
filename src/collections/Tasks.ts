@@ -1,8 +1,10 @@
 import type { CollectionConfig } from 'payload'
 import { exchangeSyncAfterChange } from '../hooks/exchangeSyncHook'
+import { apiAccess } from '../access'
 
 export const Tasks: CollectionConfig = {
   slug: 'tasks',
+  access: apiAccess,
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'category', 'priority', 'dueDate', 'client', 'status'],

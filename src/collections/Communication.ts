@@ -1,73 +1,63 @@
 import type { CollectionConfig } from 'payload'
+import { standardAccess } from '../access'
 
 export const Communication: CollectionConfig = {
   slug: 'communication',
+  access: standardAccess,
   admin: {
     useAsTitle: 'subject',
-    defaultColumns: ['subject', 'channel', 'direction', 'client', 'createdAt'],
   },
   fields: [
     {
-      name: 'channel',
+      name: 'subject',
+      type: 'text',
+      label: 'Betreff',
+    },
+    {
+      name: 'type',
       type: 'select',
-      required: true,
+      label: 'Typ',
       options: [
         { label: 'E-Mail', value: 'email' },
-        { label: 'Telefon', value: 'phone' },
-        { label: 'WhatsApp', value: 'whatsapp' },
-        { label: 'Telis', value: 'telis' },
-        { label: 'Persönlich', value: 'in-person' },
-        { label: 'Brief', value: 'mail' },
+        { label: 'Anruf', value: 'call' },
+        { label: 'SMS', value: 'sms' },
+        { label: 'Brief', value: 'letter' },
+        { label: 'Notiz', value: 'note' },
       ],
+    },
+    {
+      name: 'client',
+      type: 'relationship',
+      relationTo: 'clients',
+      label: 'Mandant',
+    },
+    {
+      name: 'household',
+      type: 'relationship',
+      relationTo: 'households',
+      label: 'Haushalt',
+    },
+    {
+      name: 'content',
+      type: 'textarea',
+      label: 'Inhalt',
     },
     {
       name: 'direction',
       type: 'select',
-      required: true,
+      label: 'Richtung',
       options: [
         { label: 'Eingehend', value: 'inbound' },
         { label: 'Ausgehend', value: 'outbound' },
       ],
     },
     {
-      name: 'subject',
-      type: 'text',
-      required: true,
-      label: 'Betreff',
-    },
-    {
-      name: 'content',
-      type: 'richText',
-      label: 'Inhalt',
-    },
-    {
-      name: 'client',
+      name: 'tenant',
       type: 'relationship',
-      relationTo: 'clients',
-      required: true,
-      label: 'Mandant',
-    },
-    {
-      name: 'task',
-      type: 'relationship',
-      relationTo: 'tasks',
-      label: 'Verknüpfte Aufgabe',
-    },
-    {
-      name: 'contactedAt',
-      type: 'date',
-      label: 'Kontaktzeitpunkt',
+      relationTo: 'tenants',
       admin: {
-        date: {
-          displayFormat: 'dd.MM.yyyy HH:mm',
-        },
+        position: 'sidebar',
       },
     },
-    {
-      name: 'followUpDate',
-      type: 'date',
-      label: 'Nachfassen am',
-    },
   ],
-  timestamps: true,
 }

@@ -1,25 +1,14 @@
 import type { CollectionConfig } from 'payload'
+import { standardAccess } from '../access'
 
 export const Clients: CollectionConfig = {
   slug: 'clients',
+  access: standardAccess,
   admin: {
     useAsTitle: 'lastName',
-    defaultColumns: ['lastName', 'firstName', 'householdRole', 'household', 'status'],
-    group: 'Mandanten',
+    defaultColumns: ['lastName', 'firstName', 'email', 'phone'],
   },
   fields: [
-    // === Personendaten ===
-    {
-      name: 'salutation',
-      type: 'select',
-      label: 'Anrede',
-      options: [
-        { label: 'Herr', value: 'Herr' },
-        { label: 'Frau', value: 'Frau' },
-        { label: 'Firma', value: 'Firma' },
-        { label: 'Kanzlei', value: 'Kanzlei' },
-      ],
-    },
     {
       name: 'firstName',
       type: 'text',
@@ -33,40 +22,6 @@ export const Clients: CollectionConfig = {
       label: 'Nachname',
     },
     {
-      name: 'dateOfBirth',
-      type: 'date',
-      label: 'Geburtsdatum',
-      admin: {
-        date: {
-          displayFormat: 'dd.MM.yyyy',
-        },
-      },
-    },
-    // === Haushalt-Zuordnung ===
-    {
-      name: 'household',
-      type: 'relationship',
-      relationTo: 'households',
-      label: 'Haushalt',
-      index: true,
-      admin: {
-        description: 'Zugehöriger Haushalt (über FA-Nummer verknüpft)',
-      },
-    },
-    {
-      name: 'householdRole',
-      type: 'select',
-      label: 'Rolle im Haushalt',
-      defaultValue: 'M',
-      options: [
-        { label: 'Hauptperson', value: 'M' },
-        { label: 'Partner', value: 'P' },
-        { label: 'Kind', value: 'K' },
-        { label: 'Inaktiv', value: 'I' },
-      ],
-    },
-    // === Kontaktdaten ===
-    {
       name: 'email',
       type: 'email',
       label: 'E-Mail',
@@ -79,9 +34,18 @@ export const Clients: CollectionConfig = {
     {
       name: 'mobile',
       type: 'text',
-      label: 'Mobilnummer',
+      label: 'Mobil',
     },
-    // === Adresse ===
+    {
+      name: 'dateOfBirth',
+      type: 'date',
+      label: 'Geburtsdatum',
+      admin: {
+        date: {
+          displayFormat: 'dd.MM.yyyy',
+        },
+      },
+    },
     {
       name: 'address',
       type: 'group',
@@ -89,126 +53,47 @@ export const Clients: CollectionConfig = {
       fields: [
         { name: 'street', type: 'text', label: 'Straße' },
         { name: 'zip', type: 'text', label: 'PLZ' },
-        { name: 'city', type: 'text', label: 'Ort' },
+        { name: 'city', type: 'text', label: 'Stadt' },
       ],
     },
-    // === Berufliche Daten ===
     {
-      name: 'occupationType',
+      name: 'occupation',
       type: 'text',
-      label: 'Einkommensart',
-      admin: {
-        description: 'z.B. Angestellter, Beamter, Selbstständig, Rentner',
-      },
-    },
-    // === Vertragsdaten ===
-    {
-      name: 'contractCount',
-      type: 'number',
-      label: 'Anzahl Verträge',
-      admin: {
-        description: 'Aus TOS – Anzahl Verträge bei Telis',
-      },
+      label: 'Beruf',
     },
     {
-      name: 'dlzCount',
-      type: 'number',
-      label: 'Anzahl DLZ',
-      admin: {
-        description: 'Aus TOS – Anzahl DLZ-Vorgänge',
-      },
-    },
-    {
-      name: 'bavCheckPossible',
+      name: 'smoker',
       type: 'checkbox',
-      label: 'bAV-Check möglich',
       defaultValue: false,
-      admin: {
-        description: 'Vertriebshinweis aus TOS',
-        position: 'sidebar',
-      },
-    },
-    // === Status ===
-    {
-      name: 'status',
-      type: 'select',
-      required: true,
-      defaultValue: 'lead',
-      options: [
-        { label: 'Lead', value: 'lead' },
-        { label: 'Interessent', value: 'prospect' },
-        { label: 'Mandant', value: 'client' },
-        { label: 'Ehemaliger Mandant', value: 'former' },
-      ],
+      label: 'Raucher',
     },
     {
-      name: 'source',
-      type: 'select',
-      label: 'Herkunft',
-      options: [
-        { label: 'Empfehlung', value: 'referral' },
-        { label: 'Website', value: 'website' },
-        { label: 'Telis', value: 'telis' },
-        { label: 'Sonstige', value: 'other' },
-      ],
-    },
-    // === TOS-Sync ===
-    {
-      name: 'tosPersonId',
-      type: 'text',
-      unique: true,
-      index: true,
-      label: 'TOS Personen-Nr.',
-      admin: {
-        description: 'Pers.-Nr. aus TOS (z.B. 1434763) – eindeutiger Schlüssel für Sync',
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'tosMandateSince',
-      type: 'date',
-      label: 'Mandant seit',
-      admin: {
-        description: 'Aus TOS',
-        date: {
-          displayFormat: 'dd.MM.yyyy',
-        },
-      },
-    },
-    {
-      name: 'tosLastContact',
-      type: 'date',
-      label: 'Letzter Kontakt',
-      admin: {
-        description: 'Aus TOS',
-        date: {
-          displayFormat: 'dd.MM.yyyy',
-        },
-      },
-    },
-    // === Zuordnung ===
-    {
-      name: 'assignedTo',
+      name: 'household',
       type: 'relationship',
-      relationTo: 'users',
-      label: 'Zuständiger Berater',
+      relationTo: 'households',
+      label: 'Haushalt',
     },
     {
       name: 'notes',
-      type: 'richText',
+      type: 'textarea',
       label: 'Notizen',
     },
     {
-      name: 'tags',
-      type: 'relationship',
-      relationTo: 'tags',
-      hasMany: true,
-      label: 'Tags',
+      name: 'status',
+      type: 'select',
+      defaultValue: 'active',
+      label: 'Status',
+      options: [
+        { label: 'Aktiv', value: 'active' },
+        { label: 'Interessent', value: 'prospect' },
+        { label: 'Inaktiv', value: 'inactive' },
+      ],
     },
     {
       name: 'tenant',
       type: 'relationship',
       relationTo: 'tenants',
+      required: true,
       admin: {
         position: 'sidebar',
       },
