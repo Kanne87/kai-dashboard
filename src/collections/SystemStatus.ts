@@ -1,49 +1,67 @@
 import type { CollectionConfig } from 'payload'
-import { isAuthenticated, isSuperAdmin } from '../access'
+import { isSuperAdmin } from '../access'
 
 export const SystemStatus: CollectionConfig = {
   slug: 'system-status',
   access: {
-    read: isAuthenticated,
+    // Public read – enthält nur Service-Status-Daten, keine sensitiven Infos.
+    // Wird vom Frontend (app.kailohmann.de) ohne Auth abgefragt.
+    read: () => true,
     create: isSuperAdmin,
     update: isSuperAdmin,
     delete: isSuperAdmin,
   },
   admin: {
-    useAsTitle: 'service',
+    useAsTitle: 'key',
   },
   fields: [
     {
-      name: 'service',
+      name: 'key',
       type: 'text',
       required: true,
-      label: 'Service',
+      unique: true,
+      label: 'Service-Key',
     },
     {
       name: 'status',
       type: 'select',
+      required: true,
+      defaultValue: 'unknown',
       label: 'Status',
       options: [
-        { label: 'Online', value: 'online' },
-        { label: 'Degraded', value: 'degraded' },
-        { label: 'Offline', value: 'offline' },
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+        { label: 'Error', value: 'error' },
+        { label: 'Unknown', value: 'unknown' },
       ],
     },
     {
-      name: 'url',
-      type: 'text',
-      label: 'URL',
-    },
-    {
-      name: 'lastChecked',
+      name: 'lastLogin',
       type: 'date',
-      label: 'Zuletzt geprüft',
+      label: 'Letzter Login',
       admin: { date: { displayFormat: 'dd.MM.yyyy HH:mm' } },
     },
     {
-      name: 'notes',
-      type: 'textarea',
-      label: 'Notizen',
+      name: 'lastCheck',
+      type: 'date',
+      label: 'Letzter Check',
+      admin: { date: { displayFormat: 'dd.MM.yyyy HH:mm' } },
+    },
+    {
+      name: 'expiresAt',
+      type: 'date',
+      label: 'Gültig bis',
+      admin: { date: { displayFormat: 'dd.MM.yyyy HH:mm' } },
+    },
+    {
+      name: 'message',
+      type: 'text',
+      label: 'Nachricht',
+    },
+    {
+      name: 'metadata',
+      type: 'json',
+      label: 'Metadaten',
     },
   ],
 }
