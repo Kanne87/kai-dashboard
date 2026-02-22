@@ -29,6 +29,9 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    components: {
+      afterLogin: ['src/components/AuthentikLoginButton'],
+    },
   },
   cors: [
     'https://app.kailohmann.de',
@@ -60,8 +63,4 @@ export default buildConfig({
     push: true,
   }),
   sharp,
-  // Multi-tenant plugin temporarily disabled
-  // plugins: [
-  //   multiTenantPlugin({...})
-  // ],
 })
