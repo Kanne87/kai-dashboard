@@ -1,10 +1,12 @@
 import type { CollectionConfig } from 'payload'
-import { isAuthenticated, isSuperAdmin } from '../access'
+import { isSuperAdmin } from '../access'
 
 export const SystemStatus: CollectionConfig = {
   slug: 'system-status',
   access: {
-    read: isAuthenticated,
+    // Public read – enthält nur Service-Status-Daten, keine sensitiven Infos.
+    // Wird vom Frontend (app.kailohmann.de) ohne Auth abgefragt.
+    read: () => true,
     create: isSuperAdmin,
     update: isSuperAdmin,
     delete: isSuperAdmin,
