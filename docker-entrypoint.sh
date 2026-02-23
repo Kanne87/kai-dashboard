@@ -1,27 +1,40 @@
 #!/bin/sh
 set -e
 
-echo "[entrypoint] Running Payload schema push..."
+echo "[entrypoint] Checking database schema..."
 
-# Payload's push:true runs via drizzle-kit push
-# We call it via the Payload CLI before starting the server
-if [ -f ./node_modules/.bin/payload ]; then
-  npx payload migrate 2>/dev/null || echo "[entrypoint] No pending migrations (or migrate not configured)"
-fi
+# Payload 3.x with push:true uses drizzle-kit under the hood.
+# During `next build`, Payload tries to push schema but fails because
+# DATABASE_URI is not available in the build environment (Coolify).
+# 
+# Solution: Run the schema push at container startup when DATABASE_URI
+# is available as a runtime environment variable.
+#
+# We use a small inline Node.js script that imports Payload and triggers
+# initialization, which includes the drizzle push.
 
-# Drizzle push - this is what push:true does at init time
-# We run it explicitly to sync schema before the server starts
-node -e "
-  const { getPayload } = require('payload');
-  const config = require('./payload.config');
-  getPayload({ config }).then(() => {
-    console.log('[entrypoint] Payload initialized, schema pushed');
+node --experimental-specifier-resolution=node -e "
+import('payload').then(async ({ getPayload }) => {
+  try {
+    const configModule = await import('./src/payload.config.ts').catch(() => null);
+    if (!configModule) {
+      console.log('[entrypoint] Could not load payload config from source, trying built config...');
+      const payload = await getPayload({ config: (await import('@payloadcms/next/utilities')).importConfig('./payload.config.ts') });
+      console.log('[entrypoint] Schema push completed via built config');
+      await payload.db.destroy();
+      process.exit(0);
+    }
+    const payload = await getPayload({ config: configModule.default });
+    console.log('[entrypoint] Schema push completed successfully');
+    await payload.db.destroy();
     process.exit(0);
-  }).catch(err => {
-    console.error('[entrypoint] Schema push failed:', err.message);
-    process.exit(0); // Don't block startup
-  });
-" 2>/dev/null || echo "[entrypoint] Fallback: schema push via payload init skipped"
+  } catch (err) {
+    console.error('[entrypoint] Schema push error:', err.message);
+    console.log('[entrypoint] Continuing startup anyway...');
+    process.exit(0);
+  }
+});
+" 2>&1 || echo "[entrypoint] Schema push script failed, continuing..."
 
 echo "[entrypoint] Starting server..."
 exec node server.js
