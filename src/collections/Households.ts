@@ -5,12 +5,12 @@ export const Households: CollectionConfig = {
   slug: 'households',
   access: standardAccess,
   admin: {
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'status', 'advisor'],
+    useAsTitle: 'displayName',
+    defaultColumns: ['displayName', 'status', 'assignedTo'],
   },
   fields: [
     {
-      name: 'name',
+      name: 'displayName',
       type: 'text',
       required: true,
       label: 'Haushaltsname',
@@ -19,6 +19,7 @@ export const Households: CollectionConfig = {
       name: 'status',
       type: 'select',
       defaultValue: 'active',
+      required: true,
       label: 'Status',
       options: [
         { label: 'Aktiv', value: 'active' },
@@ -27,7 +28,13 @@ export const Households: CollectionConfig = {
       ],
     },
     {
-      name: 'advisor',
+      name: 'primaryPerson',
+      type: 'relationship',
+      relationTo: 'clients',
+      label: 'Hauptperson',
+    },
+    {
+      name: 'assignedTo',
       type: 'relationship',
       relationTo: 'users',
       label: 'Berater',
@@ -54,33 +61,53 @@ export const Households: CollectionConfig = {
       hasMany: true,
       label: 'Tags',
     },
+
+    // ── TOS-Synchronisation ──
     {
-      name: 'yearlyReviewMonth',
+      name: 'tosFaNumber',
+      type: 'text',
+      unique: true,
+      label: 'TOS FA-Nummer',
+      admin: {
+        position: 'sidebar',
+        description: 'Mandanten-Nr. im TOS (z.B. 1313412)',
+      },
+    },
+    {
+      name: 'tosFaPromo',
+      type: 'text',
+      label: 'TOS FA-Promo',
+      admin: { position: 'sidebar' },
+    },
+    {
+      name: 'tosLastSynced',
+      type: 'date',
+      label: 'Letzter TOS-Sync',
+      admin: {
+        position: 'sidebar',
+        date: { displayFormat: 'dd.MM.yyyy HH:mm' },
+      },
+    },
+    {
+      name: 'tosSyncStatus',
       type: 'select',
-      label: 'Jahresgespräch (Monat)',
+      defaultValue: 'never',
+      label: 'Sync-Status',
+      admin: { position: 'sidebar' },
       options: [
-        { label: 'Januar', value: '1' },
-        { label: 'Februar', value: '2' },
-        { label: 'März', value: '3' },
-        { label: 'April', value: '4' },
-        { label: 'Mai', value: '5' },
-        { label: 'Juni', value: '6' },
-        { label: 'Juli', value: '7' },
-        { label: 'August', value: '8' },
-        { label: 'September', value: '9' },
-        { label: 'Oktober', value: '10' },
-        { label: 'November', value: '11' },
-        { label: 'Dezember', value: '12' },
+        { label: 'Nie synchronisiert', value: 'never' },
+        { label: 'Synchronisiert', value: 'synced' },
+        { label: 'Fehler', value: 'error' },
+        { label: 'Ausstehend', value: 'pending' },
       ],
     },
+
+    // ── Tenant ──
     {
       name: 'tenant',
       type: 'relationship',
       relationTo: 'tenants',
-      required: true,
-      admin: {
-        position: 'sidebar',
-      },
+      admin: { position: 'sidebar' },
     },
   ],
 }
