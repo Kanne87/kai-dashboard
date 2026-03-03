@@ -17,6 +17,7 @@ import { Documents } from './collections/Documents'
 import { Tags } from './collections/Tags'
 import { Automations } from './collections/Automations'
 import { Contracts } from './collections/Contracts'
+import { Claims } from './collections/Claims'
 import { SystemStatus } from './collections/SystemStatus'
 import { TaskGroups } from './collections/TaskGroups'
 import { AdvisorProfiles } from './collections/AdvisorProfiles'
@@ -51,6 +52,7 @@ export default buildConfig({
     Tags,
     Automations,
     Contracts,
+    Claims,
     SystemStatus,
     AdvisorProfiles,
   ],
