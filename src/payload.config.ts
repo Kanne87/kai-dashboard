@@ -19,6 +19,7 @@ import { Automations } from './collections/Automations'
 import { Contracts } from './collections/Contracts'
 import { SystemStatus } from './collections/SystemStatus'
 import { TaskGroups } from './collections/TaskGroups'
+import { AdvisorProfiles } from './collections/AdvisorProfiles'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -35,6 +36,7 @@ export default buildConfig({
   },
   cors: [
     'https://app.kailohmann.de',
+    'https://immo.kailohmann.de',
   ],
   collections: [
     Users,
@@ -50,6 +52,7 @@ export default buildConfig({
     Automations,
     Contracts,
     SystemStatus,
+    AdvisorProfiles,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
