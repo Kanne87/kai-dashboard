@@ -9,7 +9,7 @@ export async function GET() {
     const db = payload.db.drizzle
     const fixes: string[] = []
 
-    // Check claims_history columns
+    // Fix 1: claims_history.id must be varchar (not integer/serial)
     const histCols = await db.execute(
       sql`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'claims_history' ORDER BY ordinal_position`
     )
@@ -24,29 +24,47 @@ export async function GET() {
         await db.execute(sql`ALTER TABLE claims_history DROP COLUMN id`)
         await db.execute(sql`ALTER TABLE claims_history ADD COLUMN id varchar`)
         fixes.push('Changed claims_history.id from integer to varchar')
+      } else {
+        fixes.push('claims_history.id already varchar - OK')
       }
     }
 
-    // Check claims_rels columns
-    const relsCols = await db.execute(
-      sql`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'claims_rels' ORDER BY ordinal_position`
+    // Fix 2: payload_locked_documents_rels needs claims_id column
+    const lockedRelsCols = await db.execute(
+      sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'payload_locked_documents_rels'`
     )
-    const relsColNames = relsCols.rows.map((r: Record<string, unknown>) => r.column_name as string)
+    const lockedColNames = lockedRelsCols.rows.map((r: Record<string, unknown>) => r.column_name as string)
 
-    if (!relsColNames.includes('id')) {
-      await db.execute(sql`ALTER TABLE claims_rels ADD COLUMN id serial PRIMARY KEY`)
-      fixes.push('Added id serial PRIMARY KEY to claims_rels')
+    if (!lockedColNames.includes('claims_id')) {
+      await db.execute(sql`ALTER TABLE payload_locked_documents_rels ADD COLUMN claims_id integer`)
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_locked_docs_rels_claims ON payload_locked_documents_rels (claims_id)`)
+      fixes.push('Added claims_id to payload_locked_documents_rels')
+    } else {
+      fixes.push('payload_locked_documents_rels.claims_id already exists - OK')
     }
 
-    // Clean up test claims
+    // Fix 3: payload_preferences_rels might also need claims_id
+    const prefsRelsCols = await db.execute(
+      sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'payload_preferences_rels'`
+    )
+    const prefsColNames = prefsRelsCols.rows.map((r: Record<string, unknown>) => r.column_name as string)
+
+    if (!prefsColNames.includes('claims_id')) {
+      await db.execute(sql`ALTER TABLE payload_preferences_rels ADD COLUMN claims_id integer`)
+      fixes.push('Added claims_id to payload_preferences_rels')
+    } else {
+      fixes.push('payload_preferences_rels.claims_id already exists - OK')
+    }
+
+    // Cleanup: delete test claims
     await db.execute(sql`DELETE FROM claims_history WHERE _parent_id IN (SELECT id FROM claims WHERE claim_number IN ('TEST001', 'TEST003'))`)
     await db.execute(sql`DELETE FROM claims_rels WHERE parent_id IN (SELECT id FROM claims WHERE claim_number IN ('TEST001', 'TEST003'))`)
     const deleted = await db.execute(sql`DELETE FROM claims WHERE claim_number IN ('TEST001', 'TEST003') RETURNING id, claim_number`)
     for (const row of deleted.rows) {
-      fixes.push(`Deleted test claim ${(row as Record<string, unknown>).claim_number}`)
+      fixes.push('Deleted test claim ' + (row as Record<string, unknown>).claim_number)
     }
 
-    return NextResponse.json({ success: true, fixes, historyColumns: histColNames, relsColumns: relsColNames })
+    return NextResponse.json({ success: true, fixes })
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 })
   }
