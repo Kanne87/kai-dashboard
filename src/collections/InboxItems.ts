@@ -6,8 +6,8 @@ export const InboxItems: CollectionConfig = {
   access: standardAccess,
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'category', 'priority', 'status', 'client', 'createdAt'],
-    listSearchableFields: ['title', 'documentCategory', 'contractNumber'],
+    defaultColumns: ['title', 'channel', 'priority', 'status', 'client', 'createdAt'],
+    group: 'Posteingang',
   },
   fields: [
     // ── Kern ──
@@ -16,9 +16,27 @@ export const InboxItems: CollectionConfig = {
       type: 'text',
       required: true,
       label: 'Titel',
+    },
+    {
+      name: 'summary',
+      type: 'textarea',
+      label: 'Zusammenfassung',
       admin: {
-        description: 'z.B. "Maasewers GmbH – Police – 32-3585"',
+        description: 'Kurzbeschreibung des Eingangs – was ist passiert, was ist zu tun?',
       },
+    },
+    {
+      name: 'channel',
+      type: 'select',
+      required: true,
+      label: 'Kanal',
+      options: [
+        { label: 'TOS Dokumentenportal', value: 'tos-documents' },
+        { label: 'E-Mail', value: 'email' },
+        { label: 'Telefon', value: 'phone' },
+        { label: 'Paperless', value: 'paperless' },
+        { label: 'Manuell', value: 'manual' },
+      ],
     },
     {
       name: 'status',
@@ -30,12 +48,9 @@ export const InboxItems: CollectionConfig = {
         { label: 'Neu', value: 'new' },
         { label: 'Gesehen', value: 'seen' },
         { label: 'Aufgabe erstellt', value: 'task_created' },
-        { label: 'Akzeptiert', value: 'accepted' },
+        { label: 'Abgelegt', value: 'filed' },
         { label: 'Ignoriert', value: 'ignored' },
       ],
-      admin: {
-        position: 'sidebar',
-      },
     },
     {
       name: 'priority',
@@ -48,51 +63,28 @@ export const InboxItems: CollectionConfig = {
         { label: 'Normal', value: 'normal' },
         { label: 'Niedrig', value: 'low' },
       ],
+    },
+
+    // ── Dokument-Kontext (befüllt vom Crawler) ──
+    {
+      name: 'documentCategory',
+      type: 'text',
+      label: 'Dokumentkategorie',
       admin: {
-        position: 'sidebar',
+        description: 'z.B. Police, DLZ-Bearbeitung, Regulierung VU',
       },
     },
     {
-      name: 'category',
-      type: 'select',
-      label: 'Kategorie',
-      options: [
-        { label: 'Police', value: 'policy' },
-        { label: 'Antrag', value: 'application' },
-        { label: 'DLZ-Bearbeitung', value: 'dlz' },
-        { label: 'Schadensdokument', value: 'claim' },
-        { label: 'Regulierung VU', value: 'settlement' },
-        { label: 'Kündigung', value: 'cancellation' },
-        { label: 'Info VU an Vermittler', value: 'info_vu' },
-        { label: 'Nachtrag', value: 'amendment' },
-        { label: 'Sonstiges', value: 'other' },
-      ],
+      name: 'productName',
+      type: 'text',
+      label: 'Produktname',
     },
     {
-      name: 'suggestedAction',
-      type: 'textarea',
-      label: 'Vorgeschlagene Aktion',
-      admin: {
-        description: 'Was soll mit diesem Eingang passieren?',
-      },
+      name: 'contractNumber',
+      type: 'text',
+      label: 'Vertragsnummer',
     },
-    // ── Quelle ──
-    {
-      name: 'source',
-      type: 'select',
-      required: true,
-      defaultValue: 'tos_crawl',
-      label: 'Quelle',
-      options: [
-        { label: 'TOS Dokumenten-Crawl', value: 'tos_crawl' },
-        { label: 'E-Mail', value: 'email' },
-        { label: 'Telefon', value: 'phone' },
-        { label: 'Manuell', value: 'manual' },
-      ],
-      admin: {
-        position: 'sidebar',
-      },
-    },
+
     // ── Verknüpfungen ──
     {
       name: 'client',
@@ -107,16 +99,16 @@ export const InboxItems: CollectionConfig = {
       label: 'Haushalt',
     },
     {
+      name: 'document',
+      type: 'relationship',
+      relationTo: 'documents',
+      label: 'Quelldokument',
+    },
+    {
       name: 'contract',
       type: 'relationship',
       relationTo: 'contracts',
       label: 'Vertrag',
-    },
-    {
-      name: 'document',
-      type: 'relationship',
-      relationTo: 'documents',
-      label: 'Verknüpftes Dokument',
     },
     {
       name: 'task',
@@ -124,59 +116,47 @@ export const InboxItems: CollectionConfig = {
       relationTo: 'tasks',
       label: 'Erstellte Aufgabe',
       admin: {
-        description: 'Wird gesetzt wenn aus dem Eingang eine Aufgabe erstellt wird',
+        description: 'Wird gesetzt wenn aus diesem Eingang eine Aufgabe erstellt wird',
       },
     },
-    // ── TOS Metadaten ──
+
+    // ── Aktionen / Vorschläge ──
     {
-      name: 'documentCategory',
-      type: 'text',
-      label: 'TOS-Dokumentkategorie',
+      name: 'suggestedAction',
+      type: 'select',
+      label: 'Vorgeschlagene Aktion',
+      options: [
+        { label: 'Ablegen', value: 'file' },
+        { label: 'Aufgabe erstellen', value: 'create_task' },
+        { label: 'Kunden informieren', value: 'notify_client' },
+        { label: 'Prüfen', value: 'review' },
+        { label: 'Weiterleiten', value: 'forward' },
+        { label: 'Schadensmeldung bearbeiten', value: 'process_claim' },
+        { label: 'Ignorieren', value: 'ignore' },
+      ],
       admin: {
-        position: 'sidebar',
+        description: 'Automatischer Vorschlag basierend auf Dokumenttyp',
       },
     },
     {
-      name: 'productName',
+      name: 'suggestedActionReason',
       type: 'text',
-      label: 'Produktname',
+      label: 'Begründung',
       admin: {
-        position: 'sidebar',
+        description: 'Warum wird diese Aktion vorgeschlagen?',
       },
     },
+
+    // ── Metadaten ──
     {
-      name: 'contractNumber',
+      name: 'sourceId',
       type: 'text',
-      label: 'Vertragsnummer',
-      admin: {
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'nextcloudPath',
-      type: 'text',
-      label: 'Nextcloud-Pfad',
-      admin: {
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'tosDocumentId',
-      type: 'text',
-      label: 'TOS Dokument-ID',
+      label: 'Quell-ID',
       unique: true,
       index: true,
       admin: {
         position: 'sidebar',
-      },
-    },
-    // ── Notizen & Entscheidung ──
-    {
-      name: 'notes',
-      type: 'textarea',
-      label: 'Notizen',
-      admin: {
-        description: 'Eigene Anmerkungen zum Eingang',
+        description: 'Eindeutige ID zur Deduplizierung (z.B. tos-doc-34967060)',
       },
     },
     {
@@ -185,12 +165,18 @@ export const InboxItems: CollectionConfig = {
       label: 'Bearbeitet am',
       admin: {
         position: 'sidebar',
-        date: {
-          displayFormat: 'dd.MM.yyyy HH:mm',
-        },
+        date: { displayFormat: 'dd.MM.yyyy HH:mm' },
       },
     },
-    // ── Tenant ──
+    {
+      name: 'processedBy',
+      type: 'relationship',
+      relationTo: 'users',
+      label: 'Bearbeitet von',
+      admin: {
+        position: 'sidebar',
+      },
+    },
     {
       name: 'tenant',
       type: 'relationship',
