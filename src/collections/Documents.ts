@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { standardAccess } from '../access'
+import { createInboxItemHook } from '../hooks/createInboxItemHook'
 
 export const Documents: CollectionConfig = {
   slug: 'documents',
@@ -7,6 +8,9 @@ export const Documents: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'type', 'client', 'source', 'createdAt'],
+  },
+  hooks: {
+    afterChange: [createInboxItemHook],
   },
   fields: [
     {
