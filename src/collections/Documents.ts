@@ -141,6 +141,20 @@ export const Documents: CollectionConfig = {
       },
     },
     {
+      name: 'documentDate',
+      type: 'date',
+      label: 'Dokumentdatum (TOS)',
+      index: true,
+      admin: {
+        position: 'sidebar',
+        description: 'Datum an dem das Dokument im TOS-Portal eingestellt wurde',
+        date: {
+          pickerAppearance: 'dayOnly',
+          displayFormat: 'dd.MM.yyyy',
+        },
+      },
+    },
+    {
       name: 'nextcloudPath',
       type: 'text',
       label: 'Nextcloud-Pfad',
