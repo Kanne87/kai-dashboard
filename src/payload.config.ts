@@ -21,6 +21,7 @@ import { Claims } from './collections/Claims'
 import { SystemStatus } from './collections/SystemStatus'
 import { TaskGroups } from './collections/TaskGroups'
 import { AdvisorProfiles } from './collections/AdvisorProfiles'
+import { InboxItems } from './collections/InboxItems'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -33,11 +34,21 @@ export default buildConfig({
     },
     components: {
       afterLogin: ['src/components/AuthentikLoginButton'],
+      views: {
+        posteingang: {
+          Component: 'src/components/Posteingang',
+          path: '/posteingang',
+          meta: {
+            title: 'Posteingang',
+          },
+        },
+      },
     },
   },
   cors: [
     'https://app.kailohmann.de',
     'https://immo.kailohmann.de',
+    'https://tos-crawler.kailohmann.de',
   ],
   collections: [
     Users,
@@ -55,6 +66,7 @@ export default buildConfig({
     Claims,
     SystemStatus,
     AdvisorProfiles,
+    InboxItems,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
