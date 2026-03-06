@@ -33,7 +33,7 @@ ENV NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL}
 ENV NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL}
 
 RUN npx payload generate:importmap
-# next build triggers Payload init → push:true syncs DB schema
+# next build triggers Payload init - push:true syncs DB schema
 RUN npm run build
 
 # Production
@@ -48,10 +48,13 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Startup migration script (runs before server to sync DB schema)
+COPY --chown=nextjs:nodejs migrate.mjs ./
 
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Run migration then start server
+CMD node migrate.mjs && exec node server.js
