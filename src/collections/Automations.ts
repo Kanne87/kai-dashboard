@@ -5,41 +5,15 @@ export const Automations: CollectionConfig = {
   slug: 'automations',
   access: standardAccess,
   admin: {
-    useAsTitle: 'name',
+    useAsTitle: 'title',
+    group: 'Posteingang',
   },
   fields: [
     {
-      name: 'name',
+      name: 'title',
       type: 'text',
       required: true,
-      label: 'Name',
-    },
-    {
-      name: 'type',
-      type: 'select',
-      label: 'Typ',
-      options: [
-        { label: 'N8N Workflow', value: 'n8n' },
-        { label: 'Cron Job', value: 'cron' },
-        { label: 'Webhook', value: 'webhook' },
-        { label: 'Event-basiert', value: 'event' },
-      ],
-    },
-    {
-      name: 'status',
-      type: 'select',
-      defaultValue: 'active',
-      label: 'Status',
-      options: [
-        { label: 'Aktiv', value: 'active' },
-        { label: 'Inaktiv', value: 'inactive' },
-        { label: 'Fehler', value: 'error' },
-      ],
-    },
-    {
-      name: 'n8nWorkflowId',
-      type: 'text',
-      label: 'N8N Workflow ID',
+      label: 'Titel',
     },
     {
       name: 'description',
@@ -47,18 +21,43 @@ export const Automations: CollectionConfig = {
       label: 'Beschreibung',
     },
     {
-      name: 'lastRun',
-      type: 'date',
-      label: 'Letzter Lauf',
-      admin: { date: { displayFormat: 'dd.MM.yyyy HH:mm' } },
+      name: 'isActive',
+      type: 'checkbox',
+      defaultValue: true,
+      label: 'Aktiv',
+    },
+    {
+      name: 'trigger',
+      type: 'json',
+      label: 'Ausl\u00f6ser',
+      admin: { description: 'JSON: { documentType, category, keywords[] }' },
+    },
+    {
+      name: 'action',
+      type: 'json',
+      label: 'Aktion',
+      admin: { description: 'JSON: { type, params }' },
+    },
+    {
+      name: 'learnedFromCount',
+      type: 'number',
+      defaultValue: 0,
+      label: 'Gelernt aus',
+      admin: { description: 'Anzahl Aktionen aus denen diese Regel gelernt wurde' },
+    },
+    {
+      name: 'accuracy',
+      type: 'number',
+      defaultValue: 90,
+      label: 'Genauigkeit (%)',
+      min: 0,
+      max: 100,
     },
     {
       name: 'tenant',
       type: 'relationship',
       relationTo: 'tenants',
-      admin: {
-        position: 'sidebar',
-      },
+      admin: { position: 'sidebar' },
     },
   ],
 }

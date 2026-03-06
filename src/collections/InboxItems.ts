@@ -6,7 +6,7 @@ export const InboxItems: CollectionConfig = {
   access: standardAccess,
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'channel', 'priority', 'status', 'client', 'createdAt'],
+    defaultColumns: ['title', 'priority', 'status', 'aiActionType', 'aiConfidence', 'createdAt'],
     group: 'Posteingang',
   },
   fields: [
@@ -21,14 +21,10 @@ export const InboxItems: CollectionConfig = {
       name: 'summary',
       type: 'textarea',
       label: 'Zusammenfassung',
-      admin: {
-        description: 'Kurzbeschreibung des Eingangs – was ist passiert, was ist zu tun?',
-      },
     },
     {
       name: 'channel',
       type: 'select',
-      required: true,
       label: 'Kanal',
       options: [
         { label: 'TOS Dokumentenportal', value: 'tos-documents' },
@@ -47,6 +43,7 @@ export const InboxItems: CollectionConfig = {
       options: [
         { label: 'Neu', value: 'new' },
         { label: 'Gesehen', value: 'seen' },
+        { label: 'Verarbeitet', value: 'processed' },
         { label: 'Aufgabe erstellt', value: 'task_created' },
         { label: 'Abgelegt', value: 'filed' },
         { label: 'Ignoriert', value: 'ignored' },
@@ -56,7 +53,7 @@ export const InboxItems: CollectionConfig = {
       name: 'priority',
       type: 'select',
       defaultValue: 'normal',
-      label: 'Priorität',
+      label: 'Priorit\u00e4t',
       options: [
         { label: 'Dringend', value: 'urgent' },
         { label: 'Hoch', value: 'high' },
@@ -65,87 +62,93 @@ export const InboxItems: CollectionConfig = {
       ],
     },
 
-    // ── Dokument-Kontext (befüllt vom Crawler) ──
-    {
-      name: 'documentCategory',
-      type: 'text',
-      label: 'Dokumentkategorie',
-      admin: {
-        description: 'z.B. Police, DLZ-Bearbeitung, Regulierung VU',
-      },
-    },
-    {
-      name: 'productName',
-      type: 'text',
-      label: 'Produktname',
-    },
-    {
-      name: 'contractNumber',
-      type: 'text',
-      label: 'Vertragsnummer',
-    },
+    // ── Dokument-Kontext ──
+    { name: 'documentCategory', type: 'text', label: 'Dokumentkategorie' },
+    { name: 'productName', type: 'text', label: 'Produktname' },
+    { name: 'contractNumber', type: 'text', label: 'Vertragsnummer' },
 
-    // ── Verknüpfungen ──
-    {
-      name: 'client',
-      type: 'relationship',
-      relationTo: 'clients',
-      label: 'Mandant',
-    },
-    {
-      name: 'household',
-      type: 'relationship',
-      relationTo: 'households',
-      label: 'Haushalt',
-    },
-    {
-      name: 'document',
-      type: 'relationship',
-      relationTo: 'documents',
-      label: 'Quelldokument',
-    },
-    {
-      name: 'contract',
-      type: 'relationship',
-      relationTo: 'contracts',
-      label: 'Vertrag',
-    },
-    {
-      name: 'task',
-      type: 'relationship',
-      relationTo: 'tasks',
-      label: 'Erstellte Aufgabe',
-      admin: {
-        description: 'Wird gesetzt wenn aus diesem Eingang eine Aufgabe erstellt wird',
-      },
-    },
+    // ── Verkn\u00fcpfungen ──
+    { name: 'client', type: 'relationship', relationTo: 'clients', label: 'Mandant' },
+    { name: 'household', type: 'relationship', relationTo: 'households', label: 'Haushalt' },
+    { name: 'document', type: 'relationship', relationTo: 'documents', label: 'Quelldokument' },
+    { name: 'contract', type: 'relationship', relationTo: 'contracts', label: 'Vertrag' },
+    { name: 'task', type: 'relationship', relationTo: 'tasks', label: 'Erstellte Aufgabe' },
 
-    // ── Aktionen / Vorschläge ──
+    // ── KI-Anreicherung ──
     {
-      name: 'suggestedAction',
+      name: 'aiSummary',
+      type: 'textarea',
+      label: 'KI-Zusammenfassung',
+      admin: { description: 'Automatisch generierte Zusammenfassung des Dokuments' },
+    },
+    {
+      name: 'aiDocumentType',
+      type: 'text',
+      label: 'KI-Dokumenttyp',
+    },
+    {
+      name: 'aiActionType',
       type: 'select',
       label: 'Vorgeschlagene Aktion',
       options: [
-        { label: 'Ablegen', value: 'file' },
         { label: 'Aufgabe erstellen', value: 'create_task' },
-        { label: 'Kunden informieren', value: 'notify_client' },
-        { label: 'Prüfen', value: 'review' },
+        { label: 'Nachricht formulieren', value: 'compose_message' },
         { label: 'Weiterleiten', value: 'forward' },
-        { label: 'Schadensmeldung bearbeiten', value: 'process_claim' },
-        { label: 'Ignorieren', value: 'ignore' },
+        { label: 'Zur Kenntnis nehmen', value: 'acknowledge' },
       ],
-      admin: {
-        description: 'Automatischer Vorschlag basierend auf Dokumenttyp',
-      },
     },
     {
-      name: 'suggestedActionReason',
-      type: 'text',
-      label: 'Begründung',
-      admin: {
-        description: 'Warum wird diese Aktion vorgeschlagen?',
-      },
+      name: 'aiActionParams',
+      type: 'json',
+      label: 'Aktions-Parameter',
+      admin: { description: 'JSON mit konkreten Parametern f\u00fcr die vorgeschlagene Aktion' },
     },
+    {
+      name: 'aiConfidence',
+      type: 'number',
+      label: 'KI-Konfidenz',
+      min: 0,
+      max: 100,
+      admin: { description: '0-100% Sicherheit der KI-Analyse' },
+    },
+    {
+      name: 'aiSource',
+      type: 'select',
+      label: 'Vorschlags-Quelle',
+      options: [
+        { label: 'KI (Ollama)', value: 'ai' },
+        { label: 'Automatisierungsregel', value: 'rule' },
+      ],
+    },
+    {
+      name: 'aiSuggestedResponse',
+      type: 'textarea',
+      label: 'Nachrichten-Vorschlag',
+      admin: { description: 'Vorgeschlagene WhatsApp/E-Mail Nachricht an den Mandanten' },
+    },
+    {
+      name: 'aiRuleId',
+      type: 'number',
+      label: 'Regel-ID',
+      admin: { description: 'ID der Automatisierungsregel die diesen Vorschlag generiert hat' },
+    },
+
+    // ── Bearbeitung ──
+    {
+      name: 'actionTaken',
+      type: 'text',
+      label: 'Ausgef\u00fchrte Aktion',
+    },
+    {
+      name: 'actionTakenAt',
+      type: 'date',
+      label: 'Aktion ausgef\u00fchrt am',
+      admin: { date: { displayFormat: 'dd.MM.yyyy HH:mm' } },
+    },
+
+    // ── Alt (regelbasiert) ──
+    { name: 'suggestedAction', type: 'text', label: 'Regelbasierte Aktion (legacy)' },
+    { name: 'suggestedActionReason', type: 'text', label: 'Begr\u00fcndung (legacy)' },
 
     // ── Metadaten ──
     {
@@ -154,37 +157,27 @@ export const InboxItems: CollectionConfig = {
       label: 'Quell-ID',
       unique: true,
       index: true,
-      admin: {
-        position: 'sidebar',
-        description: 'Eindeutige ID zur Deduplizierung (z.B. tos-doc-34967060)',
-      },
+      admin: { position: 'sidebar' },
     },
     {
       name: 'processedAt',
       type: 'date',
-      label: 'Bearbeitet am',
-      admin: {
-        position: 'sidebar',
-        date: { displayFormat: 'dd.MM.yyyy HH:mm' },
-      },
+      label: 'KI-Analyse am',
+      admin: { position: 'sidebar', date: { displayFormat: 'dd.MM.yyyy HH:mm' } },
     },
     {
       name: 'processedBy',
       type: 'relationship',
       relationTo: 'users',
       label: 'Bearbeitet von',
-      admin: {
-        position: 'sidebar',
-      },
+      admin: { position: 'sidebar' },
     },
     {
       name: 'tenant',
       type: 'relationship',
       relationTo: 'tenants',
       required: true,
-      admin: {
-        position: 'sidebar',
-      },
+      admin: { position: 'sidebar' },
     },
   ],
 }
