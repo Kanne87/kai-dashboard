@@ -55,14 +55,5 @@ export const Tenants: CollectionConfig = {
       ],
     },
 
-    // ── Appointment Templates (stored as JSON to avoid array table issues with push:true) ──
-    {
-      name: 'appointmentTemplates',
-      type: 'json',
-      label: 'Terminvorlagen',
-      admin: {
-        description: 'JSON Array mit Terminvorlagen: [{name, slug, duration, bufferBefore, bufferAfter, color, ewsCategory, defaultLocation, isActive}]',
-      },
-    },
   ],
 }
