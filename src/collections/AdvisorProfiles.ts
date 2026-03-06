@@ -67,6 +67,24 @@ export const AdvisorProfiles: CollectionConfig = {
       type: 'text',
       required: true,
     },
+
+    // ── Zoom OAuth ──
+    {
+      name: 'zoomIntegration',
+      type: 'group',
+      label: 'Zoom-Integration',
+      admin: {
+        description: 'Wird automatisch beim Verbinden mit Zoom gesetzt',
+      },
+      fields: [
+        { name: 'connected', type: 'checkbox', defaultValue: false },
+        { name: 'accessToken', type: 'text', admin: { readOnly: true } },
+        { name: 'refreshToken', type: 'text', admin: { readOnly: true } },
+        { name: 'tokenExpiresAt', type: 'date', admin: { readOnly: true } },
+        { name: 'zoomUserId', type: 'text', admin: { readOnly: true } },
+        { name: 'zoomEmail', type: 'text', admin: { readOnly: true } },
+      ],
+    },
   ],
   timestamps: true,
 }
