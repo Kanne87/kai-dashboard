@@ -50,7 +50,7 @@ jobs:
     steps:
       - name: Deploy to Coolify
         run: |
-          curl -s -X POST "https://coolify.kailohmann.de/api/v1/deploy" \
+          curl -sf -X POST "https://coolify.kailohmann.de/api/v1/deploy" \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{"uuid": "bckwks88goskw0kgc4cckcsk", "force": false}'
+            -d '{"uuid": "bckwks88goskw0kgc4cckcsk", "force": true}'
