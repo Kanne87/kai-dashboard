@@ -55,63 +55,14 @@ export const Tenants: CollectionConfig = {
       ],
     },
 
-    // ── Appointment Templates ──
+    // ── Appointment Templates (stored as JSON to avoid array table issues with push:true) ──
     {
       name: 'appointmentTemplates',
-      type: 'array',
+      type: 'json',
       label: 'Terminvorlagen',
-      fields: [
-        { name: 'name', type: 'text', required: true, label: 'Name' },
-        { name: 'slug', type: 'text', required: true, label: 'Slug' },
-        {
-          name: 'duration',
-          type: 'number',
-          required: true,
-          label: 'Dauer (Minuten)',
-          defaultValue: 60,
-          min: 15,
-        },
-        { name: 'bufferBefore', type: 'number', label: 'Puffer davor (Min.)', defaultValue: 0, min: 0 },
-        { name: 'bufferAfter', type: 'number', label: 'Puffer danach (Min.)', defaultValue: 15, min: 0 },
-        {
-          name: 'color',
-          type: 'select',
-          label: 'Farbe',
-          defaultValue: 'blue',
-          options: [
-            { label: 'Blau', value: 'blue' },
-            { label: 'Orange', value: 'orange' },
-            { label: 'Rot', value: 'red' },
-            { label: 'Teal', value: 'teal' },
-            { label: 'Gruen', value: 'green' },
-            { label: 'Grau', value: 'slate' },
-            { label: 'Violett', value: 'violet' },
-          ],
-        },
-        {
-          name: 'ewsCategory',
-          type: 'select',
-          label: 'Exchange-Kategorie',
-          options: [
-            { label: '(keine)', value: '' },
-            { label: 'Termin Beratung', value: 'Termin Beratung' },
-            { label: 'Termin BIG', value: 'Termin BIG' },
-            { label: 'Termin FA', value: 'Termin FA' },
-          ],
-        },
-        {
-          name: 'defaultLocation',
-          type: 'select',
-          label: 'Standard-Ort',
-          defaultValue: 'kanzlei',
-          options: [
-            { label: 'Kanzlei', value: 'kanzlei' },
-            { label: 'Zoom', value: 'zoom' },
-            { label: 'Individuell', value: 'custom' },
-          ],
-        },
-        { name: 'isActive', type: 'checkbox', defaultValue: true, label: 'Aktiv' },
-      ],
+      admin: {
+        description: 'JSON Array mit Terminvorlagen: [{name, slug, duration, bufferBefore, bufferAfter, color, ewsCategory, defaultLocation, isActive}]',
+      },
     },
   ],
 }
