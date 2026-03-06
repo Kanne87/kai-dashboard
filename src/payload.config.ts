@@ -22,6 +22,7 @@ import { SystemStatus } from './collections/SystemStatus'
 import { TaskGroups } from './collections/TaskGroups'
 import { AdvisorProfiles } from './collections/AdvisorProfiles'
 import { InboxItems } from './collections/InboxItems'
+import { AppointmentPreps } from './collections/AppointmentPreps'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -67,6 +68,7 @@ export default buildConfig({
     SystemStatus,
     AdvisorProfiles,
     InboxItems,
+    AppointmentPreps,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
