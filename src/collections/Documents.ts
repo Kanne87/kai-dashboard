@@ -46,7 +46,6 @@ export const Documents: CollectionConfig = {
       options: [
         { label: 'Manuell', value: 'manual' },
         { label: 'TOS-Crawler', value: 'tos' },
-        { label: 'Paperless', value: 'paperless' },
         { label: 'E-Mail', value: 'email' },
       ],
     },
@@ -73,15 +72,16 @@ export const Documents: CollectionConfig = {
       type: 'text',
       label: 'Datei-URL',
       admin: {
-        description: 'Link zum Dokument in Paperless-ngx oder Nextcloud',
+        description: 'Link zum Dokument in MinIO (Public URL)',
       },
     },
     {
       name: 'paperlessId',
       type: 'number',
-      label: 'Paperless Dokument-ID',
+      label: 'Paperless Dokument-ID (deprecated)',
       admin: {
-        description: 'Automatisch verknüpft über N8N-Workflow',
+        description: 'Nicht mehr in Verwendung',
+        condition: (_, siblingData) => !!siblingData?.paperlessId,
       },
     },
     {
@@ -157,9 +157,11 @@ export const Documents: CollectionConfig = {
     {
       name: 'nextcloudPath',
       type: 'text',
-      label: 'Nextcloud-Pfad',
+      label: 'Nextcloud-Pfad (deprecated)',
       admin: {
         position: 'sidebar',
+        description: 'Legacy – Dokumente liegen jetzt in MinIO',
+        condition: (_, siblingData) => !!siblingData?.nextcloudPath,
       },
     },
     {
@@ -178,7 +180,9 @@ export const Documents: CollectionConfig = {
       options: [
         { label: 'Nicht verarbeitet', value: 'none' },
         { label: 'Ausstehend', value: 'pending' },
+        { label: 'Indiziert', value: 'indexed' },
         { label: 'Verarbeitet', value: 'processed' },
+        { label: 'Kein Text', value: 'no_text' },
         { label: 'Fehler', value: 'error' },
       ],
       admin: {
