@@ -47,6 +47,7 @@ export const InboxItems: CollectionConfig = {
         { label: 'Aufgabe erstellt', value: 'task_created' },
         { label: 'Abgelegt', value: 'filed' },
         { label: 'Ignoriert', value: 'ignored' },
+        { label: 'Archiviert (Regel)', value: 'archived' },
       ],
     },
     {
@@ -131,6 +132,31 @@ export const InboxItems: CollectionConfig = {
       type: 'number',
       label: 'Regel-ID',
       admin: { description: 'ID der Automatisierungsregel die diesen Vorschlag generiert hat' },
+    },
+
+    // ── Filterregeln (Session 175) ──
+    {
+      name: 'filterRuleId',
+      type: 'text',
+      label: 'Filter-Regel',
+      admin: { description: 'ID der Filterregel die dieses Item bewertet hat (z.B. riester-vollzulage)' },
+    },
+    {
+      name: 'filterAction',
+      type: 'select',
+      label: 'Filter-Aktion',
+      options: [
+        { label: 'Unterdrueckt (auto-archiviert)', value: 'suppress' },
+        { label: 'Warnung anzeigen', value: 'flag' },
+        { label: 'Durchgelassen', value: 'pass' },
+      ],
+      admin: { description: 'Ergebnis der Filterregel-Auswertung' },
+    },
+    {
+      name: 'filterMessage',
+      type: 'text',
+      label: 'Filter-Hinweis',
+      admin: { description: 'Erklaerung der Filterregel fuer den Berater (z.B. Grundzulage nur 21,63 EUR statt 175 EUR)' },
     },
 
     // ── Bearbeitung ──

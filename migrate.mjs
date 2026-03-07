@@ -12,7 +12,7 @@
  * SCHEMA definition below. The CI schema-check job will fail
  * if you forget (it compares collection slugs against this file).
  *
- * Generated/maintained by Claude - Session 170/172
+ * Generated/maintained by Claude - Session 170/172/175
  */
 import pg from 'pg'
 const { Pool } = pg
@@ -38,6 +38,8 @@ const SCHEMA = {
     ['integrations_zoom_default_link', 'varchar'],
     ['integrations_zoom_api_key', 'varchar'],
     ['integrations_zoom_api_secret', 'varchar'],
+    // Session 175: Inbox filter rules per tenant
+    ['disabled_rules', 'jsonb'],
     ['updated_at', 'timestamptz'],
     ['created_at', 'timestamptz'],
   ],
@@ -254,6 +256,10 @@ const SCHEMA = {
     ['ai_processed_at', 'timestamptz'],
     ['action_taken', 'varchar'],
     ['action_taken_at', 'timestamptz'],
+    // Session 175: Inbox filter rules
+    ['filter_rule_id', 'varchar'],
+    ['filter_action', 'varchar'],
+    ['filter_message', 'varchar'],
     ['tenant_id', 'integer'],
     ['updated_at', 'timestamptz'],
     ['created_at', 'timestamptz'],

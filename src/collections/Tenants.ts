@@ -58,5 +58,15 @@ export const Tenants: CollectionConfig = {
       ],
     },
 
+    // ── Posteingang-Filterregeln (Session 175) ──
+    {
+      name: 'disabledRules',
+      type: 'json',
+      label: 'Deaktivierte Filterregeln',
+      admin: {
+        description: 'JSON-Array mit IDs der Filterregeln die fuer diesen Berater deaktiviert sind, z.B. ["riester-vollzulage"]',
+      },
+    },
+
   ],
 }
