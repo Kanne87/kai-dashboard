@@ -48,8 +48,9 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Startup migration script (runs before server to sync DB schema)
+# Startup migration: per-collection schema files + aggregator
 COPY --chown=nextjs:nodejs migrate.mjs ./
+COPY --chown=nextjs:nodejs migrations/ ./migrations/
 
 USER nextjs
 EXPOSE 3000
