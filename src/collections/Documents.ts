@@ -89,6 +89,41 @@ export const Documents: CollectionConfig = {
       type: 'textarea',
       label: 'Beschreibung',
     },
+    // ── Extrahierter Text ──
+    {
+      name: 'extractedText',
+      type: 'textarea',
+      label: 'Extrahierter Text',
+      admin: {
+        description: 'Volltext aus dem PDF – via pdf-parse (digital) oder OCR-Service (gescannt)',
+        condition: (_, siblingData) => !!siblingData?.extractedText,
+      },
+    },
+    {
+      name: 'textExtractionMethod',
+      type: 'select',
+      label: 'Text-Extraktionsmethode',
+      options: [
+        { label: 'Nicht extrahiert', value: 'none' },
+        { label: 'pdf-parse (digital)', value: 'pdf-parse' },
+        { label: 'OCR (Marker/Surya)', value: 'ocr' },
+        { label: 'Kein Text gefunden', value: 'no-text' },
+        { label: 'Fehler', value: 'error' },
+      ],
+      defaultValue: 'none',
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'textExtractionDate',
+      type: 'date',
+      label: 'Text extrahiert am',
+      admin: {
+        position: 'sidebar',
+        condition: (_, siblingData) => siblingData?.textExtractionMethod && siblingData.textExtractionMethod !== 'none',
+      },
+    },
     {
       name: 'tags',
       type: 'relationship',
