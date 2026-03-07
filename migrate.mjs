@@ -38,7 +38,6 @@ const SCHEMA = {
     ['integrations_zoom_default_link', 'varchar'],
     ['integrations_zoom_api_key', 'varchar'],
     ['integrations_zoom_api_secret', 'varchar'],
-    // Session 175: Inbox filter rules per tenant
     ['disabled_rules', 'jsonb'],
     ['updated_at', 'timestamptz'],
     ['created_at', 'timestamptz'],
@@ -133,14 +132,26 @@ const SCHEMA = {
     ['created_at', 'timestamptz'],
   ],
 
-  // -- Documents --
+  // -- Documents (synced with Documents.ts Session 175) --
   documents: [
     ['title', 'varchar'],
+    ['category', "varchar DEFAULT 'unclassified'"],
+    ['subtype', 'varchar'],
+    ['custom_label', 'varchar'],
+    ['classification_confidence', 'numeric'],
+    ['classification_method', 'varchar'],
+    ['classification_reasoning', 'varchar'],
     ['type', 'varchar'],
+    ['source', 'varchar'],
     ['client_id', 'integer'],
     ['household_id', 'integer'],
     ['contract_id', 'integer'],
-    ['source', 'varchar'],
+    ['file_url', 'varchar'],
+    ['paperless_id', 'integer'],
+    ['description', 'varchar'],
+    ['extracted_text', 'text'],
+    ['text_extraction_method', 'varchar'],
+    ['text_extraction_date', 'timestamptz'],
     ['tos_document_id', 'varchar'],
     ['tos_section', 'varchar'],
     ['contract_number', 'varchar'],
@@ -148,26 +159,19 @@ const SCHEMA = {
     ['document_date', 'timestamptz'],
     ['product_name', 'varchar'],
     ['section', 'varchar'],
-    ['description', 'varchar'],
     ['nextcloud_path', 'varchar'],
-    ['rag_status', 'varchar'],
-    ['paperless_id', 'integer'],
-    ['documenso_id', 'varchar'],
-    ['signature_status', 'varchar'],
-    ['url', 'varchar'],
-    ['file_url', 'varchar'],
-    ['thumbnail_u_r_l', 'varchar'],
     ['filename', 'varchar'],
+    ['rag_status', 'varchar'],
+    ['url', 'varchar'],
+    ['thumbnail_u_r_l', 'varchar'],
     ['mime_type', 'varchar'],
     ['filesize', 'numeric'],
     ['width', 'numeric'],
     ['height', 'numeric'],
     ['focal_x', 'numeric'],
     ['focal_y', 'numeric'],
-    // Session 170: Text-Extraktion Pipeline
-    ['extracted_text', 'text'],
-    ['text_extraction_method', 'varchar'],
-    ['text_extraction_date', 'timestamptz'],
+    ['documenso_id', 'varchar'],
+    ['signature_status', 'varchar'],
     ['tenant_id', 'integer'],
     ['updated_at', 'timestamptz'],
     ['created_at', 'timestamptz'],
@@ -256,7 +260,6 @@ const SCHEMA = {
     ['ai_processed_at', 'timestamptz'],
     ['action_taken', 'varchar'],
     ['action_taken_at', 'timestamptz'],
-    // Session 175: Inbox filter rules
     ['filter_rule_id', 'varchar'],
     ['filter_action', 'varchar'],
     ['filter_message', 'varchar'],
@@ -345,7 +348,7 @@ const SCHEMA = {
     ['created_at', 'timestamptz'],
   ],
 
-  // -- Appointment Templates (NEW - Session 171) --
+  // -- Appointment Templates --
   appointment_templates: [
     ['name', 'varchar'],
     ['slug', 'varchar'],
@@ -363,7 +366,7 @@ const SCHEMA = {
     ['created_at', 'timestamptz'],
   ],
 
-  // -- Notification Templates (NEW - Session 171) --
+  // -- Notification Templates --
   notification_templates: [
     ['name', 'varchar'],
     ['type', 'varchar'],
@@ -377,7 +380,7 @@ const SCHEMA = {
     ['created_at', 'timestamptz'],
   ],
 
-  // -- Appointment Preps (NEW - Session 164) --
+  // -- Appointment Preps --
   appointment_preps: [
     ['exchange_calendar_id', 'varchar'],
     ['exchange_subject', 'varchar'],
@@ -402,6 +405,7 @@ const SCHEMA = {
 const RELS_TABLES = [
   'appointment_templates_rels',
   'appointment_preps_rels',
+  'documents_rels',
 ]
 
 // Array sub-tables: [table_name, parent_table, columns]
@@ -429,7 +433,6 @@ async function migrate() {
   try {
     console.log('[migrate] Starting schema check...')
     let created = 0
-    let altered = 0
 
     // -- Ensure all tables exist --
     for (const [table, columns] of Object.entries(SCHEMA)) {
@@ -441,7 +444,6 @@ async function migrate() {
       `, [table])
 
       if (!rows[0].exists) {
-        // Create the table with all columns
         const colDefs = columns.map(([name, type]) => `"${name}" ${type}`).join(',\n          ')
         await client.query(`
           CREATE TABLE "${table}" (
@@ -452,7 +454,6 @@ async function migrate() {
         console.log(`[migrate] Created table: ${table}`)
         created++
       } else {
-        // Ensure all columns exist
         for (const [col, type] of columns) {
           await client.query(`
             ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "${col}" ${type}
@@ -470,9 +471,16 @@ async function migrate() {
           "parent_id" integer,
           "path" varchar,
           "notification_templates_id" integer,
-          "tasks_id" integer
+          "tasks_id" integer,
+          "tags_id" integer
         )
       `)
+      // Ensure all potential FK columns exist
+      for (const col of ['tags_id', 'notification_templates_id', 'tasks_id']) {
+        await client.query(`
+          ALTER TABLE "${relsTable}" ADD COLUMN IF NOT EXISTS "${col}" integer
+        `)
+      }
     }
 
     // -- Ensure array sub-tables exist --
@@ -510,8 +518,6 @@ async function migrate() {
   } catch (err) {
     console.error('[migrate] Error:', err.message)
     console.error('[migrate] Stack:', err.stack)
-    // Don't crash the app - log and continue. The app may still work
-    // for most routes even if some tables are missing.
   } finally {
     client.release()
     await pool.end()
