@@ -49,7 +49,6 @@ slugs.forEach(s => console.log(`  - ${s}`))
 const migratePath = resolve(root, 'migrate.mjs')
 const migrateContent = readFileSync(migratePath, 'utf-8')
 
-// Convert slug to expected table name (hyphens -> underscores)
 const missing = []
 const systemCollections = ['users', 'media']
 
@@ -57,11 +56,14 @@ for (const slug of slugs) {
   const tableName = slug.replace(/-/g, '_')
   if (systemCollections.includes(tableName)) continue
 
-  // Check if table name appears in SCHEMA keys
-  if (migrateContent.includes(`'${tableName}'`) || migrateContent.includes(`"${tableName}"`)) {
-    continue
+  // Check: unquoted key (tenants:), single-quoted ('tenants':), or double-quoted ("tenants":)
+  const found = migrateContent.includes(tableName + ':') ||
+                migrateContent.includes("'" + tableName + "'") ||
+                migrateContent.includes('"' + tableName + '"')
+
+  if (!found) {
+    missing.push({ slug, tableName })
   }
-  missing.push({ slug, tableName })
 }
 
 // -- Step 3: Report --
