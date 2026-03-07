@@ -7,7 +7,7 @@ export const Documents: CollectionConfig = {
   access: standardAccess,
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'type', 'client', 'source', 'createdAt'],
+    defaultColumns: ['title', 'category', 'subtype', 'client', 'source', 'createdAt'],
   },
   hooks: {
     afterChange: [createInboxItemHook],
@@ -19,10 +19,88 @@ export const Documents: CollectionConfig = {
       required: true,
       label: 'Titel',
     },
+    // ── Neues Klassifikationssystem ──
+    {
+      name: 'category',
+      type: 'select',
+      label: 'Kategorie',
+      defaultValue: 'unclassified',
+      options: [
+        { label: 'Nicht klassifiziert', value: 'unclassified' },
+        { label: 'Police', value: 'police' },
+        { label: 'Antrag', value: 'antrag' },
+        { label: 'Willenserklärung', value: 'willenserklaerung' },
+        { label: 'Beratung', value: 'beratung' },
+        { label: 'Nacharbeiten', value: 'nacharbeiten' },
+        { label: 'Storno', value: 'storno' },
+        { label: 'Schaden', value: 'schaden' },
+        { label: 'Sonstiges', value: 'sonstiges' },
+      ],
+      index: true,
+    },
+    {
+      name: 'subtype',
+      type: 'text',
+      label: 'Subtyp',
+      admin: {
+        description: 'Feingranularer Subtyp (z.B. nachtrag, pkv-protokoll, dlz-auftrag). Flexibles Textfeld – wächst mit den Rules.',
+      },
+    },
+    {
+      name: 'customLabel',
+      type: 'text',
+      label: 'Individuelles Label',
+      admin: {
+        description: 'Freitext für manuell hochgeladene Dokumente (z.B. Darlehensverlauf, Tilgungsplan)',
+      },
+    },
+    // ── Klassifikations-Metadaten ──
+    {
+      name: 'classificationConfidence',
+      type: 'number',
+      label: 'Klassifikations-Konfidenz',
+      min: 0,
+      max: 1,
+      admin: {
+        position: 'sidebar',
+        step: 0.01,
+        condition: (_, siblingData) => siblingData?.category && siblingData.category !== 'unclassified',
+      },
+    },
+    {
+      name: 'classificationMethod',
+      type: 'select',
+      label: 'Klassifikations-Methode',
+      options: [
+        { label: 'LLM (Ollama)', value: 'llm' },
+        { label: 'Signal-Match', value: 'signal-match' },
+        { label: 'Fallback', value: 'fallback' },
+        { label: 'Manuell', value: 'manual' },
+      ],
+      admin: {
+        position: 'sidebar',
+        condition: (_, siblingData) => siblingData?.category && siblingData.category !== 'unclassified',
+      },
+    },
+    {
+      name: 'classificationReasoning',
+      type: 'text',
+      label: 'Klassifikations-Begründung',
+      admin: {
+        position: 'sidebar',
+        condition: (_, siblingData) => !!siblingData?.classificationReasoning,
+      },
+    },
+    // ── Legacy type (für Abwärtskompatibilität) ──
     {
       name: 'type',
       type: 'select',
-      label: 'Dokumenttyp',
+      label: 'Dokumenttyp (Legacy)',
+      admin: {
+        description: 'Altes Feld – wird durch category/subtype ersetzt',
+        position: 'sidebar',
+        condition: (_, siblingData) => !!siblingData?.type,
+      },
       options: [
         { label: 'Antrag', value: 'application' },
         { label: 'Police', value: 'policy' },
@@ -146,9 +224,10 @@ export const Documents: CollectionConfig = {
     {
       name: 'documentCategory',
       type: 'text',
-      label: 'Dokumentkategorie (TOS)',
+      label: 'TOS-Kategorie (Original)',
       admin: {
         position: 'sidebar',
+        description: 'Originale Kategorie aus dem TOS – nur Referenz, nicht die Wahrheit',
       },
     },
     {
