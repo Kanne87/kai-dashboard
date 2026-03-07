@@ -12,7 +12,7 @@
  * SCHEMA definition below. The CI schema-check job will fail
  * if you forget (it compares collection slugs against this file).
  *
- * Generated/maintained by Claude - Session 172
+ * Generated/maintained by Claude - Session 170/172
  */
 import pg from 'pg'
 const { Pool } = pg
@@ -162,6 +162,10 @@ const SCHEMA = {
     ['height', 'numeric'],
     ['focal_x', 'numeric'],
     ['focal_y', 'numeric'],
+    // Session 170: Text-Extraktion Pipeline
+    ['extracted_text', 'text'],
+    ['text_extraction_method', 'varchar'],
+    ['text_extraction_date', 'timestamptz'],
     ['tenant_id', 'integer'],
     ['updated_at', 'timestamptz'],
     ['created_at', 'timestamptz'],
