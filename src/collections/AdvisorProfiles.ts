@@ -64,17 +64,20 @@ export const AdvisorProfiles: CollectionConfig = {
       label: 'Bio / Notizen',
       type: 'textarea',
     },
-
-    // -- Adresse (optional, fuer Immo-Rechner / Briefkopf) --
     {
-      name: 'address',
-      type: 'group',
-      label: 'Adresse',
-      fields: [
-        { name: 'street', label: 'Strasse + Hausnummer', type: 'text' },
-        { name: 'zip', label: 'PLZ', type: 'text' },
-        { name: 'city', label: 'Ort', type: 'text' },
-      ],
+      name: 'street',
+      label: 'Strasse + Hausnummer',
+      type: 'text',
+    },
+    {
+      name: 'zip',
+      label: 'PLZ',
+      type: 'text',
+    },
+    {
+      name: 'city',
+      label: 'Ort',
+      type: 'text',
     },
 
     // -- Zoom OAuth --
