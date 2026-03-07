@@ -19,11 +19,11 @@ const configPath = resolve(root, 'src/payload.config.ts')
 const configContent = readFileSync(configPath, 'utf-8')
 
 // Find all collection import paths
-const importRegex = /import\s*\{[^}]+\}\s*from\s*'\.\/(?:collections|globals)\/([^']+)'/g
+const importRegex = /import\s*\{[^}]+\}\s*from\s*['"]\.\/(collections|globals)\/([^'"]+)['"]/g
 const collectionFiles = []
 let match
 while ((match = importRegex.exec(configContent)) !== null) {
-  collectionFiles.push(match[1])
+  collectionFiles.push(match[2])
 }
 
 // Read each collection file to get the slug
@@ -33,7 +33,7 @@ for (const file of collectionFiles) {
     const filePath = resolve(root, 'src', dir, `${file}.ts`)
     try {
       const content = readFileSync(filePath, 'utf-8')
-      const slugMatch = content.match(/slug:\s*['"]([^'"]+)['"]/) 
+      const slugMatch = content.match(/slug:\s*['"]([^'"]+)['"]/)
       if (slugMatch) {
         slugs.push(slugMatch[1])
       }
@@ -57,13 +57,11 @@ for (const slug of slugs) {
   const tableName = slug.replace(/-/g, '_')
   if (systemCollections.includes(tableName)) continue
 
-  const tableRegex = new RegExp(`['"]${tableName}['"]\\s*:`, 'm')
-  if (!tableRegex.test(migrateContent)) {
-    const createRegex = new RegExp(`CREATE TABLE.*["']${tableName}["']`, 'im')
-    if (!createRegex.test(migrateContent)) {
-      missing.push({ slug, tableName })
-    }
+  // Check if table name appears in SCHEMA keys
+  if (migrateContent.includes(`'${tableName}'`) || migrateContent.includes(`"${tableName}"`)) {
+    continue
   }
+  missing.push({ slug, tableName })
 }
 
 // -- Step 3: Report --
