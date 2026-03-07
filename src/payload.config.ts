@@ -83,7 +83,10 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URI || '',
     },
-    push: true,
+    // Session 175: push disabled – migrate.mjs handles all schema changes.
+    // push:true conflicts with migrate.mjs when column types don't match
+    // Drizzle's expectations (e.g. varchar vs enum for select fields).
+    push: false,
   }),
   sharp,
 })
