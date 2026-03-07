@@ -32,6 +32,9 @@ export const Tenants: CollectionConfig = {
         { name: 'city', type: 'text', label: 'Ort' },
         { name: 'phone', type: 'text', label: 'Telefon' },
         { name: 'email', type: 'email', label: 'E-Mail' },
+        // Geocoded coordinates (auto-filled on save)
+        { name: 'lat', type: 'number', admin: { condition: () => false } },
+        { name: 'lng', type: 'number', admin: { condition: () => false } },
       ],
     },
 
