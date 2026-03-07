@@ -12,7 +12,7 @@
  * SCHEMA definition below. The CI schema-check job will fail
  * if you forget (it compares collection slugs against this file).
  *
- * Generated/maintained by Claude - Session 170/172/175
+ * Generated/maintained by Claude - Session 170/172/175/176
  */
 import pg from 'pg'
 const { Pool } = pg
@@ -292,6 +292,8 @@ const SCHEMA = {
     ['last_name', 'varchar'],
     ['email', 'varchar'],
     ['phone', 'varchar'],
+    ['role', 'varchar'],
+    ['bio', 'varchar'],
     ['street', 'varchar'],
     ['zip', 'varchar'],
     ['city', 'varchar'],
@@ -511,6 +513,18 @@ async function migrate() {
       }
     }
 
+    // -- Ensure payload_locked_documents has columns for all collections --
+    // Payload's internal lock table needs a FK column per collection.
+    // push:true sometimes fails to add these for new collections.
+    const allCollections = Object.keys(SCHEMA)
+    for (const collection of allCollections) {
+      const colName = `${collection}_id`
+      await client.query(`
+        ALTER TABLE "payload_locked_documents" ADD COLUMN IF NOT EXISTS "${colName}" integer
+      `)
+    }
+    console.log('[migrate] payload_locked_documents columns verified.')
+
     if (created > 0) {
       console.log(`[migrate] Created ${created} new tables`)
     }
@@ -525,3 +539,4 @@ async function migrate() {
 }
 
 await migrate()
+
