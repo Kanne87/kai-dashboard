@@ -11,8 +11,8 @@ export const AdvisorProfiles: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'lastName',
-    group: 'Immo-Rechner',
-    description: 'Beraterprofile fuer den Kapitalanlage-Rechner',
+    group: 'Berater',
+    description: 'Beraterprofile (lo-board, Rechner-Tools)',
   },
   fields: [
     {
@@ -47,28 +47,37 @@ export const AdvisorProfiles: CollectionConfig = {
       name: 'phone',
       label: 'Telefon',
       type: 'text',
-      required: true,
     },
     {
-      name: 'street',
-      label: 'Strasse + Hausnummer',
-      type: 'text',
-      required: true,
+      name: 'role',
+      label: 'Rolle',
+      type: 'select',
+      defaultValue: 'berater',
+      options: [
+        { label: 'Berater', value: 'berater' },
+        { label: 'Assistenz', value: 'assistenz' },
+        { label: 'Admin', value: 'admin' },
+      ],
     },
     {
-      name: 'zip',
-      label: 'PLZ',
-      type: 'text',
-      required: true,
-    },
-    {
-      name: 'city',
-      label: 'Ort',
-      type: 'text',
-      required: true,
+      name: 'bio',
+      label: 'Bio / Notizen',
+      type: 'textarea',
     },
 
-    // ── Zoom OAuth ──
+    // -- Adresse (optional, fuer Immo-Rechner / Briefkopf) --
+    {
+      name: 'address',
+      type: 'group',
+      label: 'Adresse',
+      fields: [
+        { name: 'street', label: 'Strasse + Hausnummer', type: 'text' },
+        { name: 'zip', label: 'PLZ', type: 'text' },
+        { name: 'city', label: 'Ort', type: 'text' },
+      ],
+    },
+
+    // -- Zoom OAuth --
     {
       name: 'zoomIntegration',
       type: 'group',
