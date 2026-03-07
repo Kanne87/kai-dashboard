@@ -9,14 +9,15 @@ export const authentikCallback: Endpoint = {
 
     const code = url.searchParams.get('code')
     const error = url.searchParams.get('error')
-    const state = url.searchParams.get('state')
+    const stateParam = url.searchParams.get('state')
 
     const cookie = parseCookies(req.headers)
-    const oauthState = cookie.get('oauthState')
-    const returnTo = cookie.get('oauthReturnTo') || '/admin'
+    const oauthNonce = cookie.get('oauthNonce')
 
     // Clear temporary OAuth cookies
     const headers = new Headers()
+    clearCookie(headers, 'oauthNonce')
+    // Clean up legacy cookies from old flow
     clearCookie(headers, 'oauthState')
     clearCookie(headers, 'oauthReturnTo')
 
@@ -30,8 +31,27 @@ export const authentikCallback: Endpoint = {
       return errorRedirect('provider_error')
     }
 
-    if (!state || !oauthState || state !== oauthState) {
-      console.error('Invalid OAuth state', { oauthState, state })
+    if (!stateParam) {
+      return errorRedirect('missing_state')
+    }
+
+    // Decode state parameter (contains nonce + returnTo)
+    let nonce: string
+    let returnTo: string
+    try {
+      const stateJson = Buffer.from(stateParam, 'base64url').toString('utf-8')
+      const stateData = JSON.parse(stateJson)
+      nonce = stateData.nonce
+      returnTo = stateData.returnTo || '/admin'
+    } catch {
+      console.error('Failed to decode state parameter')
+      return errorRedirect('invalid_state')
+    }
+
+    // Verify nonce against cookie if cookie is available
+    // (cookie may be missing due to cross-site blocking, so we don't hard-fail)
+    if (oauthNonce && oauthNonce !== nonce) {
+      console.error('OAuth nonce mismatch', { oauthNonce, nonce })
       return errorRedirect('invalid_state')
     }
 

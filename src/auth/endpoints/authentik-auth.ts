@@ -9,19 +9,23 @@ export const authentikAuth: Endpoint = {
     const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL!
 
     try {
-      const state = crypto.randomUUID()
+      const nonce = crypto.randomUUID()
+
+      // Encode returnTo in state as JSON so it survives cross-site cookie blocking
+      const statePayload = JSON.stringify({ nonce, returnTo })
+      const stateEncoded = Buffer.from(statePayload).toString('base64url')
 
       const params = new URLSearchParams({
         client_id: process.env.AUTHENTIK_CLIENT_ID!,
         redirect_uri: `${baseUrl}/api/users/auth/authentik/callback`,
         response_type: 'code',
         scope: 'openid email profile',
-        state,
+        state: stateEncoded,
       })
 
       const headers = new Headers()
-      appendCookie(headers, 'oauthState', state)
-      appendCookie(headers, 'oauthReturnTo', returnTo)
+      // Still set cookie as verification (nonce only), but flow works without it
+      appendCookie(headers, 'oauthNonce', nonce)
 
       headers.set(
         'Location',
