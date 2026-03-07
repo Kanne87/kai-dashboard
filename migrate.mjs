@@ -513,6 +513,22 @@ async function migrate() {
       }
     }
 
+    // -- DIAGNOSTIC: List all payload internal tables --
+    const { rows: payloadTables } = await client.query(`
+      SELECT table_name FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name LIKE '%payload%'
+      ORDER BY table_name
+    `)
+    console.log('[migrate] Payload internal tables:', payloadTables.map(r => r.table_name).join(', '))
+
+    // Check if payload_locked_documents exists and list its columns
+    const { rows: lockedCols } = await client.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'payload_locked_documents'
+      ORDER BY ordinal_position
+    `)
+    console.log('[migrate] payload_locked_documents columns:', lockedCols.map(r => r.column_name).join(', '))
+
     // -- Ensure payload_locked_documents has columns for all collections --
     // Payload's internal lock table needs a FK column per collection.
     // push:true sometimes fails to add these for new collections.
@@ -539,4 +555,5 @@ async function migrate() {
 }
 
 await migrate()
+
 
