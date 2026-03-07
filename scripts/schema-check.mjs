@@ -1,13 +1,12 @@
 /**
  * CI Schema-Drift Check
- * 
- * Parses payload.config.ts to extract collection slugs, then verifies
- * that migrate.mjs references every collection. Fails the build if
- * a collection is missing from migrate.mjs.
+ *
+ * Verifies that every collection defined in payload.config.ts has
+ * a corresponding migration file in migrations/.
  *
  * Run: node scripts/schema-check.mjs
  */
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync, readdirSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -19,11 +18,11 @@ const configPath = resolve(root, 'src/payload.config.ts')
 const configContent = readFileSync(configPath, 'utf-8')
 
 // Find all collection import paths
-const importRegex = /import\s*\{[^}]+\}\s*from\s*['"]\.\/(collections|globals)\/([^'"]+)['"]/g
+const importRegex = /import\s*\{[^}]+\}\s*from\s*['"]\.\/(?:collections|globals)\/([^'"]+)['"]/g
 const collectionFiles = []
 let match
 while ((match = importRegex.exec(configContent)) !== null) {
-  collectionFiles.push(match[2])
+  collectionFiles.push(match[1])
 }
 
 // Read each collection file to get the slug
@@ -33,7 +32,7 @@ for (const file of collectionFiles) {
     const filePath = resolve(root, 'src', dir, `${file}.ts`)
     try {
       const content = readFileSync(filePath, 'utf-8')
-      const slugMatch = content.match(/slug:\s*['"]([^'"]+)['"]/)
+      const slugMatch = content.match(/slug:\s*['"]([^'"]+)['"/])
       if (slugMatch) {
         slugs.push(slugMatch[1])
       }
@@ -45,10 +44,26 @@ for (const file of collectionFiles) {
 console.log(`Found ${slugs.length} collections in payload.config.ts:`)
 slugs.forEach(s => console.log(`  - ${s}`))
 
-// -- Step 2: Check migrate.mjs for coverage --
-const migratePath = resolve(root, 'migrate.mjs')
-const migrateContent = readFileSync(migratePath, 'utf-8')
+// -- Step 2: Check migrations/ directory for coverage --
+const migrationsDir = resolve(root, 'migrations')
+const migrationFiles = existsSync(migrationsDir)
+  ? readdirSync(migrationsDir).filter(f => f.endsWith('.mjs'))
+  : []
 
+// Read each migration file to get the exported table name
+const migrationTables = new Set()
+for (const file of migrationFiles) {
+  const content = readFileSync(resolve(migrationsDir, file), 'utf-8')
+  const tableMatch = content.match(/export\s+const\s+table\s*=\s*['"]([^'"]+)['"/])
+  if (tableMatch) {
+    migrationTables.add(tableMatch[1])
+  }
+}
+
+console.log(`\nFound ${migrationTables.size} migration files in migrations/:`)
+migrationTables.forEach(t => console.log(`  - ${t}`))
+
+// -- Step 3: Compare --
 const missing = []
 const systemCollections = ['users', 'media']
 
@@ -56,29 +71,24 @@ for (const slug of slugs) {
   const tableName = slug.replace(/-/g, '_')
   if (systemCollections.includes(tableName)) continue
 
-  // Check: unquoted key (tenants:), single-quoted ('tenants':), or double-quoted ("tenants":)
-  const found = migrateContent.includes(tableName + ':') ||
-                migrateContent.includes("'" + tableName + "'") ||
-                migrateContent.includes('"' + tableName + '"')
-
-  if (!found) {
+  if (!migrationTables.has(tableName)) {
     missing.push({ slug, tableName })
   }
 }
 
-// -- Step 3: Report --
+// -- Step 4: Report --
 console.log('')
 if (missing.length === 0) {
-  console.log('All collections are covered in migrate.mjs')
+  console.log('All collections have migration files.')
   process.exit(0)
 } else {
-  console.error('Schema drift detected! The following collections are NOT in migrate.mjs:\n')
+  console.error('Schema drift detected! The following collections have NO migration file:\n')
   for (const { slug, tableName } of missing) {
-    console.error(`  Collection "${slug}" -> expected table "${tableName}"`)
+    console.error(`  Collection "${slug}" -> expected migrations/${tableName}.mjs`)
   }
   console.error('\nAction required:')
-  console.error('   1. Add the missing table(s) to the SCHEMA definition in migrate.mjs')
-  console.error('   2. Include all fields from the Collection definition')
+  console.error('   1. Create migrations/${tableName}.mjs with table name and column definitions')
+  console.error('   2. Export: table (string), columns (array), optionally rels and arrays')
   console.error('   3. Commit and push again')
   console.error('')
   process.exit(1)

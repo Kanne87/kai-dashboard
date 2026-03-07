@@ -1,443 +1,77 @@
 /**
  * Startup migration script for Payload CMS standalone mode.
  * Ensures all expected tables and columns exist before server.js starts.
- * 
+ *
  * WHY THIS EXISTS:
  * The Docker image is built in GitHub Actions (no DB access).
  * Payload's push:true only works when DB is reachable at build time.
  * This script bridges the gap by running at container startup.
  *
- * MAINTENANCE:
- * When adding new Collections or fields in Payload, update the
- * SCHEMA definition below. The CI schema-check job will fail
- * if you forget (it compares collection slugs against this file).
+ * ARCHITECTURE (Session 177):
+ * Schema definitions live in per-collection files under migrations/.
+ * Each file exports { table, columns, rels?, arrays? }.
+ * This entry point aggregates all of them and applies the schema.
  *
- * Generated/maintained by Claude - Session 170/172/175/176
+ * WHY PER-COLLECTION FILES:
+ * Multiple Claude chats can work on different collections simultaneously.
+ * With a monolithic schema file, the last push wins and overwrites
+ * the other chat's changes. Per-collection files eliminate this conflict
+ * because each chat touches only the file for its collection.
+ *
+ * MAINTENANCE:
+ * When adding a new Collection to Payload, create a matching file
+ * in migrations/ with the table name and column definitions.
+ * The CI schema-check job will fail if you forget.
  */
 import pg from 'pg'
-const { Pool } = pg
+import { readdir } from 'fs/promises'
+import { join, dirname } from 'path'
+import { fileURLToPath, pathToFileURL } from 'url'
 
+const { Pool } = pg
+const __dirname = dirname(fileURLToPath(import.meta.url))
 const pool = new Pool({ connectionString: process.env.DATABASE_URI })
 
-// --- Schema Definition ---
-// Each entry: table -> array of [column, type_with_default]
-// Convention: Payload converts camelCase -> snake_case, groups -> prefix_field
-const SCHEMA = {
-  // -- Tenants --
-  tenants: [
-    ['name', 'varchar'],
-    ['slug', 'varchar'],
-    ['kanzlei_street', 'varchar'],
-    ['kanzlei_zip', 'varchar'],
-    ['kanzlei_city', 'varchar'],
-    ['kanzlei_phone', 'varchar'],
-    ['kanzlei_email', 'varchar'],
-    ['kanzlei_lat', 'numeric'],
-    ['kanzlei_lng', 'numeric'],
-    ['integrations_zoom_enabled', 'boolean DEFAULT false'],
-    ['integrations_zoom_default_link', 'varchar'],
-    ['integrations_zoom_api_key', 'varchar'],
-    ['integrations_zoom_api_secret', 'varchar'],
-    ['disabled_rules', 'jsonb'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
+// --- Load all per-collection migration files ---
+async function loadMigrations() {
+  const migrationsDir = join(__dirname, 'migrations')
+  const files = await readdir(migrationsDir)
+  const schema = {}
+  const relsTables = []
+  const arrayTables = []
 
-  // -- Users --
-  users: [
-    ['email', 'varchar'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
+  for (const file of files.sort()) {
+    if (!file.endsWith('.mjs')) continue
+    const filePath = join(migrationsDir, file)
+    const mod = await import(pathToFileURL(filePath).href)
 
-  // -- Households --
-  households: [
-    ['tos_fa_number', 'varchar'],
-    ['tos_fa_promo', 'varchar'],
-    ['display_name', 'varchar'],
-    ['primary_person_id', 'integer'],
-    ['address_street', 'varchar'],
-    ['address_zip', 'varchar'],
-    ['address_city', 'varchar'],
-    ['status', 'varchar'],
-    ['tos_last_synced', 'timestamptz'],
-    ['tos_sync_status', 'varchar'],
-    ['notes', 'varchar'],
-    ['assigned_to_id', 'integer'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
+    schema[mod.table] = mod.columns
 
-  // -- Clients --
-  clients: [
-    ['salutation', 'varchar'],
-    ['first_name', 'varchar'],
-    ['last_name', 'varchar'],
-    ['date_of_birth', 'timestamptz'],
-    ['household_id', 'integer'],
-    ['household_role', 'varchar'],
-    ['email', 'varchar'],
-    ['phone', 'varchar'],
-    ['mobile', 'varchar'],
-    ['address_street', 'varchar'],
-    ['address_zip', 'varchar'],
-    ['address_city', 'varchar'],
-    ['occupation_type', 'varchar'],
-    ['contract_count', 'integer'],
-    ['dlz_count', 'integer'],
-    ['bav_check_possible', 'boolean'],
-    ['status', 'varchar'],
-    ['source', 'varchar'],
-    ['tos_person_id', 'varchar'],
-    ['tos_client_number', 'varchar'],
-    ['tos_mandate_since', 'varchar'],
-    ['tos_last_contact', 'varchar'],
-    ['assigned_to_id', 'integer'],
-    ['notes', 'varchar'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
+    if (mod.rels) {
+      relsTables.push(mod.rels)
+    }
 
-  // -- Contracts --
-  contracts: [
-    ['display_title', 'varchar'],
-    ['client_id', 'integer'],
-    ['household_id', 'integer'],
-    ['company', 'varchar'],
-    ['category', 'varchar'],
-    ['contract_number', 'varchar'],
-    ['product', 'varchar'],
-    ['status', 'varchar'],
-    ['start_date', 'timestamptz'],
-    ['end_date', 'timestamptz'],
-    ['premium', 'numeric'],
-    ['premium_interval', 'varchar'],
-    ['tos_contract_id', 'varchar'],
-    ['tos_section', 'varchar'],
-    ['notes', 'varchar'],
-    ['application_date', 'timestamptz'],
-    ['duration_years', 'numeric'],
-    ['tariff', 'varchar'],
-    ['insured_person', 'varchar'],
-    ['payment_account', 'varchar'],
-    ['additional_data', 'jsonb'],
-    ['original_advisor', 'varchar'],
-    ['managed_by_telis', 'boolean'],
-    ['cancellation_date', 'timestamptz'],
-    ['cancellation_reason', 'varchar'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
+    if (mod.arrays) {
+      for (const arr of mod.arrays) {
+        arrayTables.push([arr.table, mod.table, arr.columns])
+      }
+    }
+  }
 
-  // -- Documents (synced with Documents.ts Session 175) --
-  documents: [
-    ['title', 'varchar'],
-    ['category', "varchar DEFAULT 'unclassified'"],
-    ['subtype', 'varchar'],
-    ['custom_label', 'varchar'],
-    ['classification_confidence', 'numeric'],
-    ['classification_method', 'varchar'],
-    ['classification_reasoning', 'varchar'],
-    ['type', 'varchar'],
-    ['source', 'varchar'],
-    ['client_id', 'integer'],
-    ['household_id', 'integer'],
-    ['contract_id', 'integer'],
-    ['file_url', 'varchar'],
-    ['paperless_id', 'integer'],
-    ['description', 'varchar'],
-    ['extracted_text', 'text'],
-    ['text_extraction_method', 'varchar'],
-    ['text_extraction_date', 'timestamptz'],
-    ['tos_document_id', 'varchar'],
-    ['tos_section', 'varchar'],
-    ['contract_number', 'varchar'],
-    ['document_category', 'varchar'],
-    ['document_date', 'timestamptz'],
-    ['product_name', 'varchar'],
-    ['section', 'varchar'],
-    ['nextcloud_path', 'varchar'],
-    ['filename', 'varchar'],
-    ['rag_status', 'varchar'],
-    ['url', 'varchar'],
-    ['thumbnail_u_r_l', 'varchar'],
-    ['mime_type', 'varchar'],
-    ['filesize', 'numeric'],
-    ['width', 'numeric'],
-    ['height', 'numeric'],
-    ['focal_x', 'numeric'],
-    ['focal_y', 'numeric'],
-    ['documenso_id', 'varchar'],
-    ['signature_status', 'varchar'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Claims --
-  claims: [
-    ['claim_number', 'varchar'],
-    ['external_claim_number', 'varchar'],
-    ['contract_id', 'integer'],
-    ['household_id', 'integer'],
-    ['claim_date', 'timestamptz'],
-    ['claim_type', 'varchar'],
-    ['description', 'varchar'],
-    ['status', 'varchar'],
-    ['damage_amount', 'numeric'],
-    ['regulation_amount', 'numeric'],
-    ['hint', 'varchar'],
-    ['notes', 'varchar'],
-    ['tos_claim_id', 'varchar'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Tasks --
-  tasks: [
-    ['title', 'varchar'],
-    ['description', 'varchar'],
-    ['status', 'varchar'],
-    ['priority', 'varchar'],
-    ['due_date', 'timestamptz'],
-    ['household_id', 'integer'],
-    ['client_id', 'integer'],
-    ['assigned_to_id', 'integer'],
-    ['source', 'varchar'],
-    ['source_id', 'varchar'],
-    ['task_group_id', 'integer'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Task Groups --
-  task_groups: [
-    ['name', 'varchar'],
-    ['slug', 'varchar'],
-    ['color', 'varchar'],
-    ['icon', 'varchar'],
-    ['sort_order', 'numeric'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Inbox Items --
-  inbox_items: [
-    ['title', 'varchar'],
-    ['summary', 'varchar'],
-    ['channel', 'varchar'],
-    ['status', 'varchar'],
-    ['priority', 'varchar'],
-    ['document_category', 'varchar'],
-    ['product_name', 'varchar'],
-    ['contract_number', 'varchar'],
-    ['client_id', 'integer'],
-    ['household_id', 'integer'],
-    ['document_id', 'integer'],
-    ['contract_id', 'integer'],
-    ['task_id', 'integer'],
-    ['suggested_action', 'varchar'],
-    ['suggested_action_reason', 'varchar'],
-    ['source_id', 'varchar'],
-    ['processed_at', 'timestamptz'],
-    ['processed_by_id', 'integer'],
-    ['ai_summary', 'varchar'],
-    ['ai_document_type', 'varchar'],
-    ['ai_action_type', 'varchar'],
-    ['ai_action_params', 'varchar'],
-    ['ai_confidence', 'numeric'],
-    ['ai_source', 'varchar'],
-    ['ai_suggested_response', 'varchar'],
-    ['ai_rule_id', 'varchar'],
-    ['ai_category', 'varchar'],
-    ['ai_suggested_household', 'integer'],
-    ['ai_processed_at', 'timestamptz'],
-    ['action_taken', 'varchar'],
-    ['action_taken_at', 'timestamptz'],
-    ['filter_rule_id', 'varchar'],
-    ['filter_action', 'varchar'],
-    ['filter_message', 'varchar'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Automations --
-  automations: [
-    ['title', 'varchar'],
-    ['description', 'varchar'],
-    ['is_active', 'boolean DEFAULT false'],
-    ['trigger', 'varchar'],
-    ['action', 'varchar'],
-    ['learned_from_count', 'integer'],
-    ['accuracy', 'numeric'],
-    ['learning_total_processed', 'integer DEFAULT 0'],
-    ['learning_accuracy', 'numeric'],
-    ['learning_last_trained_at', 'timestamptz'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Advisor Profiles --
-  advisor_profiles: [
-    ['authentik_sub', 'varchar'],
-    ['first_name', 'varchar'],
-    ['last_name', 'varchar'],
-    ['email', 'varchar'],
-    ['phone', 'varchar'],
-    ['role', 'varchar'],
-    ['bio', 'varchar'],
-    ['street', 'varchar'],
-    ['zip', 'varchar'],
-    ['city', 'varchar'],
-    ['zoom_integration_connected', 'boolean DEFAULT false'],
-    ['zoom_integration_access_token', 'varchar'],
-    ['zoom_integration_refresh_token', 'varchar'],
-    ['zoom_integration_token_expires_at', 'timestamptz'],
-    ['zoom_integration_zoom_user_id', 'varchar'],
-    ['zoom_integration_zoom_email', 'varchar'],
-    ['created_at', 'timestamptz'],
-    ['updated_at', 'timestamptz'],
-  ],
-
-  // -- Household Events --
-  household_events: [
-    ['household_id', 'integer'],
-    ['person_id', 'integer'],
-    ['event_type', 'varchar'],
-    ['title', 'varchar'],
-    ['description', 'varchar'],
-    ['event_date', 'timestamptz'],
-    ['source', 'varchar'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Communication --
-  communication: [
-    ['client_id', 'integer'],
-    ['household_id', 'integer'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Tags --
-  tags: [
-    ['name', 'varchar'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- System Status --
-  system_status: [
-    ['key', 'varchar'],
-    ['status', 'varchar'],
-    ['message', 'varchar'],
-    ['last_login', 'timestamptz'],
-    ['last_check', 'timestamptz'],
-    ['expires_at', 'timestamptz'],
-    ['metadata', 'jsonb'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Appointment Templates --
-  appointment_templates: [
-    ['name', 'varchar'],
-    ['slug', 'varchar'],
-    ['duration', 'numeric DEFAULT 60'],
-    ['buffer_before', 'numeric DEFAULT 0'],
-    ['buffer_after', 'numeric DEFAULT 15'],
-    ['color', 'varchar'],
-    ['icon', 'varchar'],
-    ['ews_category', 'varchar'],
-    ['default_location', 'varchar'],
-    ['is_active', 'boolean DEFAULT true'],
-    ['sort_order', 'numeric DEFAULT 0'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Notification Templates --
-  notification_templates: [
-    ['name', 'varchar'],
-    ['type', 'varchar'],
-    ['trigger', 'varchar'],
-    ['subject', 'varchar'],
-    ['body', 'varchar'],
-    ['is_active', 'boolean DEFAULT true'],
-    ['is_default', 'boolean DEFAULT false'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
-
-  // -- Appointment Preps --
-  appointment_preps: [
-    ['exchange_calendar_id', 'varchar'],
-    ['exchange_subject', 'varchar'],
-    ['appointment_date', 'timestamptz'],
-    ['appointment_time', 'varchar'],
-    ['location', 'varchar'],
-    ['client_name', 'varchar'],
-    ['client_email', 'varchar'],
-    ['household_id', 'integer'],
-    ['client_id', 'integer'],
-    ['status', 'varchar'],
-    ['notes', 'varchar'],
-    ['summary', 'varchar'],
-    ['transcript_url', 'varchar'],
-    ['tenant_id', 'integer'],
-    ['updated_at', 'timestamptz'],
-    ['created_at', 'timestamptz'],
-  ],
+  return { schema, relsTables, arrayTables }
 }
-
-// Relationship tables (for hasMany/relationship fields)
-const RELS_TABLES = [
-  'appointment_templates_rels',
-  'appointment_preps_rels',
-  'documents_rels',
-]
-
-// Array sub-tables: [table_name, parent_table, columns]
-const ARRAY_TABLES = [
-  ['appointment_preps_materials', 'appointment_preps', [
-    ['type', 'varchar'],
-    ['title', 'varchar'],
-    ['url', 'varchar'],
-  ]],
-  ['appointment_preps_aufgaben', 'appointment_preps', [
-    ['text', 'varchar'],
-    ['is_done', 'boolean DEFAULT false'],
-    ['task_id', 'integer'],
-  ]],
-  ['appointment_preps_wiedervorlagen', 'appointment_preps', [
-    ['text', 'varchar'],
-    ['due_date', 'timestamptz'],
-    ['is_done', 'boolean DEFAULT false'],
-    ['task_id', 'integer'],
-  ]],
-]
 
 async function migrate() {
   const client = await pool.connect()
   try {
-    console.log('[migrate] Starting schema check...')
+    console.log('[migrate] Loading per-collection schema definitions...')
+    const { schema, relsTables, arrayTables } = await loadMigrations()
+    console.log(`[migrate] Loaded ${Object.keys(schema).length} collections, ${relsTables.length} rels tables, ${arrayTables.length} array tables`)
+
     let created = 0
 
     // -- Ensure all tables exist --
-    for (const [table, columns] of Object.entries(SCHEMA)) {
+    for (const [table, columns] of Object.entries(schema)) {
       const { rows } = await client.query(`
         SELECT EXISTS (
           SELECT FROM information_schema.tables
@@ -465,28 +99,31 @@ async function migrate() {
     }
 
     // -- Ensure rels tables exist --
-    for (const relsTable of RELS_TABLES) {
+    const allFkColumns = new Set()
+    for (const rels of relsTables) {
+      for (const col of rels.fkColumns) {
+        allFkColumns.add(col)
+      }
+    }
+
+    for (const rels of relsTables) {
       await client.query(`
-        CREATE TABLE IF NOT EXISTS "${relsTable}" (
+        CREATE TABLE IF NOT EXISTS "${rels.table}" (
           "id" serial PRIMARY KEY,
           "order" integer,
           "parent_id" integer,
-          "path" varchar,
-          "notification_templates_id" integer,
-          "tasks_id" integer,
-          "tags_id" integer
+          "path" varchar
         )
       `)
-      // Ensure all potential FK columns exist
-      for (const col of ['tags_id', 'notification_templates_id', 'tasks_id']) {
+      for (const col of allFkColumns) {
         await client.query(`
-          ALTER TABLE "${relsTable}" ADD COLUMN IF NOT EXISTS "${col}" integer
+          ALTER TABLE "${rels.table}" ADD COLUMN IF NOT EXISTS "${col}" integer
         `)
       }
     }
 
     // -- Ensure array sub-tables exist --
-    for (const [table, parentTable, columns] of ARRAY_TABLES) {
+    for (const [table, parentTable, columns] of arrayTables) {
       const { rows } = await client.query(`
         SELECT EXISTS (
           SELECT FROM information_schema.tables
@@ -514,9 +151,7 @@ async function migrate() {
     }
 
     // -- Ensure payload internal tables have columns for all collections --
-    // Payload's lock + preferences tables need FK columns per collection.
-    // push:true sometimes fails to add these for new collections.
-    const allCollections = Object.keys(SCHEMA)
+    const allCollections = Object.keys(schema)
     const internalRelsTables = ['payload_locked_documents', 'payload_locked_documents_rels', 'payload_preferences_rels']
     for (const internalTable of internalRelsTables) {
       const { rows: tableExists } = await client.query(`
@@ -546,7 +181,3 @@ async function migrate() {
 }
 
 await migrate()
-
-
-
-
