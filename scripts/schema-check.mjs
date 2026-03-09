@@ -32,7 +32,7 @@ for (const file of collectionFiles) {
     const filePath = resolve(root, 'src', dir, `${file}.ts`)
     try {
       const content = readFileSync(filePath, 'utf-8')
-      const slugMatch = content.match(/slug:\s*['"]([^'"]+)['"/])
+      const slugMatch = content.match(/slug:\s*['"]([^'"]+)['"]/)  // Fixed: was ['"\x2f] which confused regex parser
       if (slugMatch) {
         slugs.push(slugMatch[1])
       }
@@ -54,7 +54,7 @@ const migrationFiles = existsSync(migrationsDir)
 const migrationTables = new Set()
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(migrationsDir, file), 'utf-8')
-  const tableMatch = content.match(/export\s+const\s+table\s*=\s*['"]([^'"]+)['"/])
+  const tableMatch = content.match(/export\s+const\s+table\s*=\s*['"]([^'"]+)['"]/)  // Fixed: same regex issue
   if (tableMatch) {
     migrationTables.add(tableMatch[1])
   }
