@@ -26,6 +26,7 @@ import { InboxItems } from './collections/InboxItems'
 import { AppointmentPreps } from './collections/AppointmentPreps'
 import { AppointmentTemplates } from './collections/AppointmentTemplates'
 import { NotificationTemplates } from './collections/NotificationTemplates'
+import { ContractEvents } from './collections/ContractEvents'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -68,6 +69,7 @@ export default buildConfig({
     Tags,
     Automations,
     Contracts,
+    ContractEvents,
     Claims,
     SystemStatus,
     AdvisorProfiles,
