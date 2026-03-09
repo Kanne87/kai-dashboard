@@ -12,6 +12,7 @@ import { Households } from './collections/Households'
 import { Clients } from './collections/Clients'
 import { HouseholdEvents } from './collections/HouseholdEvents'
 import { Tasks } from './collections/Tasks'
+import { TaskEvents } from './collections/TaskEvents'
 import { Communication } from './collections/Communication'
 import { Documents } from './collections/Documents'
 import { Tags } from './collections/Tags'
@@ -60,6 +61,7 @@ export default buildConfig({
     Clients,
     HouseholdEvents,
     Tasks,
+    TaskEvents,
     TaskGroups,
     Communication,
     Documents,

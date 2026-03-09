@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { exchangeSyncAfterChange } from '../hooks/exchangeSyncHook'
+import { createTaskEvent } from '../hooks/taskEventHook'
 import { apiAccess } from '../access'
 
 export const Tasks: CollectionConfig = {
@@ -10,7 +11,7 @@ export const Tasks: CollectionConfig = {
     defaultColumns: ['title', 'category', 'priority', 'dueDate', 'client', 'status'],
   },
   hooks: {
-    afterChange: [exchangeSyncAfterChange],
+    afterChange: [exchangeSyncAfterChange, createTaskEvent],
   },
   fields: [
     {
@@ -23,6 +24,14 @@ export const Tasks: CollectionConfig = {
       name: 'description',
       type: 'textarea',
       label: 'Beschreibung',
+    },
+    {
+      name: 'notizen',
+      type: 'textarea',
+      label: 'Notizen',
+      admin: {
+        description: 'Freitextnotizen zur Aufgabe',
+      },
     },
     {
       name: 'status',
@@ -39,7 +48,7 @@ export const Tasks: CollectionConfig = {
       name: 'priority',
       type: 'checkbox',
       defaultValue: false,
-      label: 'Priorität',
+      label: 'Priorit\u00e4t',
       admin: {
         description: 'Aufgabe wird in der Liste hervorgehoben',
       },
@@ -61,14 +70,14 @@ export const Tasks: CollectionConfig = {
       name: 'dueDate',
       type: 'date',
       required: true,
-      label: 'Fällig am',
+      label: 'F\u00e4llig am',
       admin: {
         date: {
           displayFormat: 'dd.MM.yyyy',
         },
       },
     },
-    // === Verknüpfungen ===
+    // === Verkn\u00fcpfungen ===
     {
       name: 'client',
       type: 'relationship',
@@ -105,7 +114,7 @@ export const Tasks: CollectionConfig = {
       type: 'relationship',
       relationTo: 'documents',
       hasMany: true,
-      label: 'Verknüpfte Dokumente',
+      label: 'Verkn\u00fcpfte Dokumente',
     },
     // === Gruppierung ===
     {
