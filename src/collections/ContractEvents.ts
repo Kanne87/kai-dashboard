@@ -79,13 +79,11 @@ export const ContractEvents: CollectionConfig = {
       },
     },
     {
-      name: 'documents',
-      type: 'relationship',
-      relationTo: 'documents',
-      hasMany: true,
-      label: 'Zugeh\u00f6rige Dokumente',
+      name: 'documentIds',
+      type: 'json',
+      label: 'Dokument-IDs',
       admin: {
-        description: 'Dokumente die zu diesem Event geh\u00f6ren',
+        description: 'Array von Payload Document IDs die zu diesem Event geh\u00f6ren',
       },
     },
     {
