@@ -15,6 +15,7 @@ export const columns = [
   ['summary', 'varchar'],
   ['details', 'jsonb'],
   ['flags', 'jsonb'],
+  ['document_ids', 'jsonb'],
   ['analysis_model', 'varchar'],
   ['tenant_id', 'integer'],
   ['updated_at', 'timestamptz'],
