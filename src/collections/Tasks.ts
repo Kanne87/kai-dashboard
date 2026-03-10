@@ -141,6 +141,7 @@ export const Tasks: CollectionConfig = {
         { label: 'Exchange Import', value: 'exchange_import' },
         { label: 'Workflow', value: 'workflow' },
         { label: 'Termin-Nachbereitung', value: 'appointment' },
+        { label: 'Dokument-Editor', value: 'document_editor' },
       ],
     },
     // === Exchange Sync ===

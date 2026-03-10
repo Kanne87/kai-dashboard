@@ -114,6 +114,8 @@ export const Documents: CollectionConfig = {
         { label: 'DLZ-Bearbeitung', value: 'dlz' },
         { label: 'Haushaltsdokument', value: 'household-doc' },
         { label: 'Sonstiges', value: 'other' },
+        { label: 'In Bearbeitung', value: 'editing' },
+        { label: 'Bearbeitet', value: 'edited' },
       ],
     },
     {
@@ -129,6 +131,7 @@ export const Documents: CollectionConfig = {
         { label: 'WhatsApp', value: 'whatsapp' },
         { label: 'Telefonnotiz', value: 'phone' },
         { label: 'Termintranskript', value: 'transcript' },
+        { label: 'Bearbeitungskopie', value: 'editing' },
       ],
     },
     {
