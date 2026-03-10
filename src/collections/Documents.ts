@@ -29,7 +29,7 @@ export const Documents: CollectionConfig = {
         { label: 'Nicht klassifiziert', value: 'unclassified' },
         { label: 'Police', value: 'police' },
         { label: 'Antrag', value: 'antrag' },
-        { label: 'Willenserklärung', value: 'willenserklaerung' },
+        { label: 'Willenserkl\u00e4rung', value: 'willenserklaerung' },
         { label: 'Beratung', value: 'beratung' },
         { label: 'Nacharbeiten', value: 'nacharbeiten' },
         { label: 'Storno', value: 'storno' },
@@ -43,7 +43,7 @@ export const Documents: CollectionConfig = {
       type: 'text',
       label: 'Subtyp',
       admin: {
-        description: 'Feingranularer Subtyp (z.B. nachtrag, pkv-protokoll, dlz-auftrag). Flexibles Textfeld – wächst mit den Rules.',
+        description: 'Feingranularer Subtyp (z.B. nachtrag, pkv-protokoll, dlz-auftrag). Flexibles Textfeld \u2013 w\u00e4chst mit den Rules.',
       },
     },
     {
@@ -51,7 +51,7 @@ export const Documents: CollectionConfig = {
       type: 'text',
       label: 'Individuelles Label',
       admin: {
-        description: 'Freitext für manuell hochgeladene Dokumente (z.B. Darlehensverlauf, Tilgungsplan)',
+        description: 'Freitext f\u00fcr manuell hochgeladene Dokumente (z.B. Darlehensverlauf, Tilgungsplan)',
       },
     },
     // ── Klassifikations-Metadaten ──
@@ -85,19 +85,19 @@ export const Documents: CollectionConfig = {
     {
       name: 'classificationReasoning',
       type: 'text',
-      label: 'Klassifikations-Begründung',
+      label: 'Klassifikations-Begr\u00fcndung',
       admin: {
         position: 'sidebar',
         condition: (_, siblingData) => !!siblingData?.classificationReasoning,
       },
     },
-    // ── Legacy type (für Abwärtskompatibilität) ──
+    // ── Legacy type (f\u00fcr Abw\u00e4rtskompatibilit\u00e4t) ──
     {
       name: 'type',
       type: 'select',
       label: 'Dokumenttyp (Legacy)',
       admin: {
-        description: 'Altes Feld – wird durch category/subtype ersetzt',
+        description: 'Altes Feld \u2013 wird durch category/subtype ersetzt',
         position: 'sidebar',
         condition: (_, siblingData) => !!siblingData?.type,
       },
@@ -105,7 +105,7 @@ export const Documents: CollectionConfig = {
         { label: 'Antrag', value: 'application' },
         { label: 'Police', value: 'policy' },
         { label: 'Nachtrag', value: 'amendment' },
-        { label: 'Kündigung', value: 'cancellation' },
+        { label: 'K\u00fcndigung', value: 'cancellation' },
         { label: 'Schadensmeldung', value: 'claim' },
         { label: 'Korrespondenz', value: 'correspondence' },
         { label: 'Beratungsprotokoll', value: 'advisory-protocol' },
@@ -123,8 +123,12 @@ export const Documents: CollectionConfig = {
       defaultValue: 'manual',
       options: [
         { label: 'Manuell', value: 'manual' },
-        { label: 'TOS-Crawler', value: 'tos' },
+        { label: 'TOS Dokumentenportal', value: 'tos' },
+        { label: 'TOS Vertragsdokumente', value: 'tos_contract' },
         { label: 'E-Mail', value: 'email' },
+        { label: 'WhatsApp', value: 'whatsapp' },
+        { label: 'Telefonnotiz', value: 'phone' },
+        { label: 'Termintranskript', value: 'transcript' },
       ],
     },
     {
@@ -173,7 +177,7 @@ export const Documents: CollectionConfig = {
       type: 'textarea',
       label: 'Extrahierter Text',
       admin: {
-        description: 'Volltext aus dem PDF – via pdf-parse (digital) oder OCR-Service (gescannt)',
+        description: 'Volltext aus dem PDF \u2013 via pdf-parse (digital) oder OCR-Service (gescannt)',
         condition: (_, siblingData) => !!siblingData?.extractedText,
       },
     },
@@ -227,7 +231,7 @@ export const Documents: CollectionConfig = {
       label: 'TOS-Kategorie (Original)',
       admin: {
         position: 'sidebar',
-        description: 'Originale Kategorie aus dem TOS – nur Referenz, nicht die Wahrheit',
+        description: 'Originale Kategorie aus dem TOS \u2013 nur Referenz, nicht die Wahrheit',
       },
     },
     {
@@ -274,7 +278,7 @@ export const Documents: CollectionConfig = {
       label: 'Nextcloud-Pfad (deprecated)',
       admin: {
         position: 'sidebar',
-        description: 'Legacy – Dokumente liegen jetzt in MinIO',
+        description: 'Legacy \u2013 Dokumente liegen jetzt in MinIO',
         condition: (_, siblingData) => !!siblingData?.nextcloudPath,
       },
     },
